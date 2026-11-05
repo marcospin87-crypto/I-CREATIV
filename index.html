@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>i-Creativ Master Pad 32</title>
-  <link rel="manifest" href="data:application/manifest+json;utf-8,%7B%22name%22%3A%22i-Creativ%20Macro%22%2C%22short_name%22%3A%22iCreativ%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23101216%22%2C%22theme_color%22%3A%22%2300e676%22%7D">
+  <link rel="manifest" href="data:application/manifest+json;utf-8,%7B%22name%22%3A%22i-Creativ%22%2C%22short_name%22%3A%22iCreativ%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230d1015%22%2C%22theme_color%22%3A%22%2300e676%22%7D">
   <style>
     :root {
       --bg: #0d1015;
@@ -16,88 +16,108 @@
       --text: #f0f6fc;
       --text-muted: #8b949e;
       --danger: #f85149;
+      --learn: #38bdf8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 18px; line-height: 1.4; }
-    
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
-    h1 { font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-    .badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; background: #21262d; color: var(--accent); }
-    .status { font-size: 0.85rem; padding: 6px 14px; border-radius: 20px; background: #161b22; color: var(--text-muted); border: 1px solid var(--border); }
-    .status.online { border-color: var(--accent); color: var(--accent); background: rgba(0, 230, 118, 0.12); }
+    body { background: var(--bg); color: var(--text); padding: 16px; line-height: 1.4; }
 
-    .main-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+    h1 { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .status { font-size: 0.8rem; padding: 5px 12px; border-radius: 16px; background: #161b22; color: var(--text-muted); border: 1px solid var(--border); }
+    .status.online { border-color: var(--accent); color: var(--accent); background: rgba(0, 230, 118, 0.1); }
+
+    /* Barra Diagnostica MIDI Live */
+    .live-bar {
+      display: flex; gap: 12px; background: #080a0c; border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 14px; margin-bottom: 16px; font-family: monospace; font-size: 0.82rem; align-items: center;
+    }
+    .live-pill { background: #21262d; padding: 2px 8px; border-radius: 4px; color: var(--learn); font-weight: bold; }
+
+    .main-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 18px; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
-    .card h2 { font-size: 0.92rem; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+    .card h2 { font-size: 0.88rem; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
 
-    /* Bank Selector Navigation */
-    .bank-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+    /* Banchi */
+    .bank-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 14px; }
     .bank-btn {
-      padding: 10px 4px; background: #0d1117; border: 1px solid var(--border); border-radius: 6px;
-      color: var(--text-muted); font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center;
+      padding: 9px 4px; background: #0d1117; border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text-muted); font-size: 0.78rem; font-weight: 700; cursor: pointer; text-align: center;
       transition: all 0.15s;
     }
     .bank-btn:hover { background: var(--surface-hover); }
     .bank-btn.active-pad { background: rgba(0, 230, 118, 0.15); border-color: var(--accent); color: var(--accent); }
     .bank-btn.active-clip { background: rgba(255, 145, 0, 0.15); border-color: var(--accent-clip); color: var(--accent-clip); }
 
-    /* Pad Grid */
-    .pads-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    /* Griglia Pad 4x2 */
+    .pads-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
     .pad-slot {
       background: #0d1117; border: 2px solid var(--border); border-radius: 8px;
-      aspect-ratio: 1; padding: 10px; display: flex; flex-direction: column; justify-content: space-between;
+      aspect-ratio: 1; padding: 8px; display: flex; flex-direction: column; justify-content: space-between;
       cursor: pointer; transition: transform 0.05s ease, background 0.08s ease; user-select: none;
     }
     .pad-slot:hover { border-color: #58a6ff; }
-    .pad-slot.selected { border-color: #f0f6fc; box-shadow: 0 0 12px rgba(240, 246, 252, 0.35); }
-    
-    /* Feedback visivo dinamico alla pressione fisica */
+    .pad-slot.selected { border-color: #f0f6fc; box-shadow: 0 0 10px rgba(240, 246, 252, 0.3); }
+    .pad-slot.learning-target { border-color: var(--learn) !important; animation: pulse 0.8s infinite alternate; }
+
+    /* Feedback visivo alla pressione fisica */
     .pad-slot.active { background: var(--accent) !important; color: #000 !important; transform: scale(0.95); }
     .pad-slot.is-clip.active { background: var(--accent-clip) !important; color: #000 !important; }
     .pad-slot.active * { color: #000 !important; }
 
-    .pad-slot.is-mapped { border-color: var(--accent); }
-    .pad-slot.is-clip.is-mapped { border-color: var(--accent-clip); }
+    .pad-slot.is-mapped { border-color: rgba(0, 230, 118, 0.5); }
+    .pad-slot.is-clip.is-mapped { border-color: rgba(255, 145, 0, 0.5); }
 
-    .pad-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; }
-    .pad-midi-code { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; }
-    .pad-action-preview { font-size: 0.74rem; word-break: break-all; margin-top: auto; font-weight: 600; }
+    .pad-header { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: bold; }
+    .pad-midi-code { font-size: 0.68rem; color: var(--text-muted); font-family: monospace; }
+    .pad-action-preview { font-size: 0.72rem; word-break: break-all; margin-top: auto; font-weight: 600; }
 
-    /* Form & Editor */
-    .form-group { margin-bottom: 14px; }
-    label { display: block; font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px; font-weight: 600; }
+    /* Form editor */
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
     input, select, textarea {
-      width: 100%; padding: 9px 12px; background: #0d1117; border: 1px solid var(--border);
-      border-radius: 6px; color: var(--text); font-size: 0.88rem; outline: none;
+      width: 100%; padding: 8px 10px; background: #0d1117; border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 0.85rem; outline: none;
     }
     input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 
-    .btn-row { display: flex; gap: 8px; margin-top: 16px; }
+    .btn-row { display: flex; gap: 8px; margin-top: 14px; }
     .btn {
-      flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: 700; font-size: 0.85rem;
+      flex: 1; padding: 9px; border-radius: 6px; border: none; font-weight: 700; font-size: 0.82rem;
       cursor: pointer; background: var(--accent); color: #000; transition: opacity 0.15s;
     }
     .btn:hover { opacity: 0.9; }
+    .btn-learn { background: #1e293b; color: var(--learn); border: 1px solid #0284c7; }
+    .btn-learn.active { background: #0284c7; color: #fff; }
     .btn-danger { background: #21262d; color: var(--danger); border: 1px solid rgba(248,81,73,0.3); }
 
-    #log { font-family: monospace; font-size: 0.72rem; color: var(--text-muted); height: 95px; overflow-y: auto; background: #080a0c; padding: 8px; border-radius: 6px; border: 1px solid var(--border); }
+    @keyframes pulse { from { opacity: 0.6; } to { opacity: 1; } }
+    #log { font-family: monospace; font-size: 0.72rem; color: var(--text-muted); height: 90px; overflow-y: auto; background: #080a0c; padding: 8px; border-radius: 6px; border: 1px solid var(--border); }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>i-Creativ Master Pad <span class="badge">32 Trigger Engine</span></h1>
+    <h1>i-Creativ Master Pad <span style="font-size: 0.7rem; padding: 2px 6px; background:#21262d; border-radius:4px; color:var(--accent);">32 Matrix</span></h1>
     <div id="midi-status" class="status">In attesa di controller MIDI...</div>
   </header>
+
+  <!-- Barra Live Debug: ti mostra subito cosa manda l'hardware -->
+  <div class="live-bar">
+    <span>Ultimo Segnale Fisico:</span>
+    <span class="live-pill" id="live-type">NESSUNO</span>
+    <span>ID: <strong id="live-id" style="color:#fff;">-</strong></span>
+    <span>Canale: <strong id="live-ch" style="color:#fff;">-</strong></span>
+    <span>Valore: <strong id="live-val" style="color:#fff;">-</strong></span>
+  </div>
 
   <div class="main-grid">
     <div class="card">
       <h2>
-        <span>Matrice Controlli</span>
-        <span style="font-size: 0.72rem; color: var(--text-muted);">Premi un pad sul controller per selezionarlo</span>
+        <span>Matrice 32 Pad</span>
+        <button id="assign-btn" class="btn btn-learn" style="width: auto; padding: 4px 10px; font-size: 0.75rem;" onclick="toggleAutoAssign()">Calibra Pad: OFF</button>
       </h2>
 
-      <!-- Navigazione Banchi -->
+      <!-- Banchi -->
       <div class="bank-nav">
         <button class="bank-btn active-pad" id="btn-PAD_A" onclick="switchBank('PAD_A')">PAD - A (1-8)</button>
         <button class="bank-btn" id="btn-PAD_B" onclick="switchBank('PAD_B')">PAD - B (9-16)</button>
@@ -108,7 +128,7 @@
       <!-- Griglia Pad -->
       <div class="pads-grid" id="pads-container"></div>
 
-      <div id="log">Monitor eventi: collega l'i-Creativ e premi un tasto...</div>
+      <div id="log">Monitor eventi MIDI pronto...</div>
     </div>
 
     <!-- Editor Parametri -->
@@ -121,8 +141,8 @@
       </div>
 
       <div class="form-group">
-        <label>ID Hardware MIDI Assegnato</label>
-        <input type="text" id="midi-code-input" placeholder="Es: note_36">
+        <label>Codice Hardware Assegnato (es. note_36 o cc_20)</label>
+        <input type="text" id="midi-code-input" placeholder="Premi un pad durante la calibrazione">
       </div>
 
       <div class="form-group">
@@ -165,12 +185,12 @@
 
       <div class="form-group" id="field-text" style="display:none;">
         <label>Testo da digitare/incollare</label>
-        <textarea id="target-text" rows="3" placeholder="Scrivi qui il testo da inserire automaticamente..."></textarea>
+        <textarea id="target-text" rows="3" placeholder="Scrivi qui il testo da inserire..."></textarea>
       </div>
 
       <div class="form-group" id="field-launch" style="display:none;">
         <label>Percorso File o URL</label>
-        <input type="text" id="target-launch" placeholder="https://youtube.com oppure C:\Program Files\App.exe">
+        <input type="text" id="target-launch" placeholder="https://google.com">
       </div>
 
       <div class="btn-row">
@@ -181,26 +201,19 @@
   </div>
 
   <script>
-    // Tabella Note di fabbrica dell'i-Creativ:
-    // PAD A: 36-43 | PAD B: 44-51 | CLIP A: 52-59 | CLIP B: 60-67
-    const DEFAULT_MAP = {
-      'PAD_A':  [36, 37, 38, 39, 40, 41, 42, 43],
-      'PAD_B':  [44, 45, 46, 47, 48, 49, 50, 51],
-      'CLIP_A': [52, 53, 54, 55, 56, 57, 58, 59],
-      'CLIP_B': [60, 61, 62, 63, 64, 65, 66, 67]
-    };
-
     const BANKS = ['PAD_A', 'PAD_B', 'CLIP_A', 'CLIP_B'];
     let currentBank = 'PAD_A';
     let selectedSlotIndex = 0;
+    let autoAssignMode = false; // Se attivo, alla pressione fisica assegna il codice allo slot selezionato
 
-    // Carica da localStorage o pre-popola con la mappa ufficiale i-Creativ
-    let slotsConfig = JSON.parse(localStorage.getItem('icreativ_slots_v3') || '{}');
+    // Caricamento slot salvati da localStorage
+    let slotsConfig = JSON.parse(localStorage.getItem('icreativ_matrix_v4') || '{}');
 
+    // Inizializza gli slot
     BANKS.forEach(bank => {
       if (!slotsConfig[bank]) {
-        slotsConfig[bank] = DEFAULT_MAP[bank].map(note => ({
-          midiCode: `note_${note}`,
+        slotsConfig[bank] = Array.from({ length: 8 }, () => ({
+          midiCode: '',
           type: 'hotkey',
           action: ''
         }));
@@ -214,7 +227,8 @@
 
       slotsConfig[currentBank].forEach((slot, idx) => {
         const div = document.createElement('div');
-        div.className = `pad-slot ${isClip ? 'is-clip' : ''} ${slot.action ? 'is-mapped' : ''} ${selectedSlotIndex === idx ? 'selected' : ''}`;
+        const isSelected = selectedSlotIndex === idx;
+        div.className = `pad-slot ${isClip ? 'is-clip' : ''} ${slot.action ? 'is-mapped' : ''} ${isSelected ? 'selected' : ''} ${autoAssignMode && isSelected ? 'learning-target' : ''}`;
         div.id = `slot-element-${currentBank}-${idx}`;
         div.onclick = () => selectSlot(idx);
 
@@ -225,7 +239,7 @@
           <div class="pad-header">
             <span>${prefix} ${padNumber}</span>
           </div>
-          <div class="pad-midi-code">${slot.midiCode || 'Non Mappato'}</div>
+          <div class="pad-midi-code">${slot.midiCode || 'Non Assegnato'}</div>
           <div class="pad-action-preview">${slot.action ? formatActionPreview(slot) : '-'}</div>
         `;
         container.appendChild(div);
@@ -260,6 +274,14 @@
       renderPads();
     }
 
+    function toggleAutoAssign() {
+      autoAssignMode = !autoAssignMode;
+      const btn = document.getElementById('assign-btn');
+      btn.textContent = autoAssignMode ? 'Calibra Pad: IN ASCOLTO' : 'Calibra Pad: OFF';
+      btn.classList.toggle('active', autoAssignMode);
+      renderPads();
+    }
+
     function updateFormFields() {
       const type = document.getElementById('action-type').value;
       ['hotkey', 'media', 'system', 'text', 'launch'].forEach(f => {
@@ -270,7 +292,7 @@
     function populateForm(slot) {
       if (!slot) return;
       const padNumber = (currentBank.endsWith('_B') ? 8 : 0) + selectedSlotIndex + 1;
-      document.getElementById('slot-id-label').value = `${currentBank} -> Slot #${padNumber}`;
+      document.getElementById('slot-id-label').value = `${currentBank} -> Pad #${padNumber}`;
       document.getElementById('midi-code-input').value = slot.midiCode || '';
       document.getElementById('action-type').value = slot.type || 'hotkey';
 
@@ -299,18 +321,18 @@
         action: actionValue
       };
 
-      localStorage.setItem('icreativ_slots_v3', JSON.stringify(slotsConfig));
-      log(`Salvato ${currentBank} [#${selectedSlotIndex+1}] -> ${actionValue}`);
+      localStorage.setItem('icreativ_matrix_v4', JSON.stringify(slotsConfig));
+      log(`Salvato ${currentBank} [#${selectedSlotIndex+1}]`);
       renderPads();
     }
 
     function clearCurrentSlot() {
-      slotsConfig[currentBank][selectedSlotIndex].action = '';
-      localStorage.setItem('icreativ_slots_v3', JSON.stringify(slotsConfig));
+      slotsConfig[currentBank][selectedSlotIndex] = { midiCode: '', type: 'hotkey', action: '' };
+      localStorage.setItem('icreativ_matrix_v4', JSON.stringify(slotsConfig));
       renderPads();
     }
 
-    // Web MIDI Access & Auto-Switching + Feedback
+    // Web MIDI Access
     if (navigator.requestMIDIAccess) {
       navigator.requestMIDIAccess({ sysex: true }).then(onMIDISuccess, () => {
         document.getElementById('midi-status').textContent = 'Errore permessi MIDI';
@@ -328,25 +350,55 @@
     function handleIncomingMIDI(event) {
       const [status, data1, data2] = event.data;
       const cmd = status >> 4;
+      const channel = (status & 0x0f) + 1; // Canale MIDI reale (1-16)
+
+      let typeStr = 'ALTRO';
       let incomingCode = null;
       let isPress = false;
 
-      if (cmd === 9) { // Note
+      // Note On / Off (qualsiasi canale)
+      if (cmd === 9) {
+        typeStr = 'NOTE ON';
         incomingCode = `note_${data1}`;
         isPress = data2 > 0;
-      } else if (cmd === 8) { // Note OFF
+      } else if (cmd === 8) {
+        typeStr = 'NOTE OFF';
         incomingCode = `note_${data1}`;
         isPress = false;
-      } else if (cmd === 11) { // CC
+      } 
+      // Control Change (molti controller usano CC per la modalità Clip)
+      else if (cmd === 11) {
+        typeStr = 'CC';
         incomingCode = `cc_${data1}`;
-        isPress = data2 > 0;
+        isPress = data2 > 0; // Se valore > 0 è pressione, 0 è rilascio
       }
+
+      // Aggiorna Diagnostica Live in cima allo schermo
+      document.getElementById('live-type').textContent = typeStr;
+      document.getElementById('live-id').textContent = incomingCode || data1;
+      document.getElementById('live-ch').textContent = channel;
+      document.getElementById('live-val').textContent = data2;
 
       if (!incomingCode) return;
 
-      log(`MIDI In: ${incomingCode} | Val: ${data2}`);
+      log(`[CH ${channel}] ${typeStr}: ${incomingCode} (val: ${data2})`);
 
-      // Cerca il pad in tutti i 4 banchi
+      // SE MODALITÀ CALIBRAZIONE È ATTIVA: assegna il codice fisico al pad attualmente selezionato
+      if (autoAssignMode && isPress) {
+        slotsConfig[currentBank][selectedSlotIndex].midiCode = incomingCode;
+        document.getElementById('midi-code-input').value = incomingCode;
+        localStorage.setItem('icreativ_matrix_v4', JSON.stringify(slotsConfig));
+        log(`🎯 Calibrato ${currentBank} Pad #${selectedSlotIndex+1} con [${incomingCode}]`);
+        
+        // Passa automaticamente al pad successivo per calibrare velocemente 1-8
+        if (selectedSlotIndex < 7) {
+          selectedSlotIndex++;
+        }
+        renderPads();
+        return;
+      }
+
+      // MODALITÀ ESECUZIONE NORMALE: Cerca il pad corrispondente
       let targetBank = null;
       let targetIndex = -1;
 
@@ -359,22 +411,18 @@
         }
       }
 
-      // Se il tasto corrisponde a un pad fisico registrato
       if (targetBank !== null && targetIndex !== -1) {
         if (isPress) {
-          // Se siamo su un altro banco, esegui l'Auto-Switch immediato
-          if (currentBank !== targetBank) {
-            switchBank(targetBank);
-          }
-          // Auto-Seleziona il pad nell'editor
+          // Cambia banco se necessario e seleziona il pad a video
+          if (currentBank !== targetBank) switchBank(targetBank);
           selectSlot(targetIndex);
 
-          // Esegui azione (se configurata)
+          // Esegue l'azione se configurata
           const slot = slotsConfig[targetBank][targetIndex];
           if (slot.action) triggerAction(slot);
         }
 
-        // Feedback visivo illuminazione pad
+        // Illumina il pad
         const el = document.getElementById(`slot-element-${targetBank}-${targetIndex}`);
         if (el) {
           if (isPress) el.classList.add('active');
@@ -384,7 +432,7 @@
     }
 
     function triggerAction(slot) {
-      log(`⚡ Azione attivata [${slot.type}]: ${slot.action}`);
+      log(`⚡ Eseguo: ${slot.action}`);
       if (window.wsBridge && window.wsBridge.readyState === WebSocket.OPEN) {
         window.wsBridge.send(JSON.stringify(slot));
       }
@@ -395,7 +443,6 @@
       l.innerHTML = `> ${msg}<br>` + l.innerHTML;
     }
 
-    // Avvio
     renderPads();
   </script>
 </body>
