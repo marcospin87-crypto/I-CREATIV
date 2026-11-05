@@ -9,7 +9,6 @@
     :root {
       --bg: #0d1015;
       --surface: #161b22;
-      --surface-hover: #1f2631;
       --border: #30363d;
       --accent: #00e676;
       --accent-clip: #ff9100;
@@ -28,7 +27,6 @@
     .status.online { border-color: var(--accent); color: var(--accent); background: rgba(0, 230, 118, 0.1); }
     .status.bridge-on { border-color: #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
 
-    /* Barra Preset in testa */
     .preset-bar {
       display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--border);
       border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; align-items: center;
@@ -40,7 +38,6 @@
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
     .card h2 { font-size: 0.88rem; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
 
-    /* Banchi */
     .bank-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
     .bank-btn {
       padding: 8px 4px; background: #0d1117; border: 1px solid var(--border); border-radius: 6px;
@@ -49,7 +46,6 @@
     .bank-btn.active-pad { background: rgba(0, 230, 118, 0.15); border-color: var(--accent); color: var(--accent); }
     .bank-btn.active-clip { background: rgba(255, 145, 0, 0.15); border-color: var(--accent-clip); color: var(--accent-clip); }
 
-    /* Griglia Pad */
     .pads-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
     .pad-slot {
       background: #0d1117; border: 2px solid var(--border); border-radius: 8px;
@@ -65,7 +61,6 @@
     .pad-midi-code { font-size: 0.65rem; color: var(--text-muted); font-family: monospace; }
     .pad-action-preview { font-size: 0.7rem; font-weight: 600; color: #fff; word-break: break-all; }
 
-    /* Form editor */
     .form-group { margin-bottom: 10px; }
     label { display: block; font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
     input, select, textarea {
@@ -74,10 +69,7 @@
     }
     input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 
-    .key-learn-box {
-      display: flex; gap: 6px; align-items: center;
-    }
-
+    .key-learn-box { display: flex; gap: 6px; align-items: center; }
     .btn-row { display: flex; gap: 6px; margin-top: 12px; }
     .btn {
       flex: 1; padding: 8px; border-radius: 6px; border: none; font-weight: 700; font-size: 0.8rem;
@@ -88,7 +80,6 @@
     .btn-learn.recording { background: #0284c7; color: #fff; animation: pulse 0.7s infinite alternate; }
     .btn-danger { background: #21262d; color: var(--danger); border: 1px solid rgba(248,81,73,0.3); }
 
-    /* Lista Mappature Configurate */
     .table-container { margin-top: 16px; background: #080a0c; border: 1px solid var(--border); border-radius: 6px; max-height: 160px; overflow-y: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 0.74rem; text-align: left; }
     th { background: #11151c; color: var(--text-muted); padding: 6px 8px; position: sticky; top: 0; }
@@ -102,14 +93,13 @@
 <body>
 
   <header>
-    <h1>i-Creativ Macro Pad Hub</h1>
+    <h1>i-Creativ Master Pad Hub</h1>
     <div class="status-group">
-      <div id="bridge-status" class="status">PC Bridge: Disconnesso</div>
-      <div id="midi-status" class="status">MIDI: In attesa...</div>
+      <div id="bridge-status" class="status">PC Bridge: Inattivo</div>
+      <div id="midi-status" class="status">MIDI: Inizializzazione...</div>
     </div>
   </header>
 
-  <!-- Barra Gestione Preset -->
   <div class="preset-bar">
     <label>Preset:</label>
     <select id="preset-selector" onchange="loadSelectedPreset()"></select>
@@ -118,7 +108,6 @@
   </div>
 
   <div class="main-grid">
-    <!-- Matrice Pad -->
     <div class="card">
       <h2>
         <span>Matrice 32 Pad</span>
@@ -134,7 +123,6 @@
 
       <div class="pads-grid" id="pads-container"></div>
 
-      <!-- Elenco Tutte le Mappe Attive nel Preset -->
       <h2 style="margin-top: 14px; margin-bottom: 6px;">Elenco Mappature del Preset</h2>
       <div class="table-container">
         <table>
@@ -152,7 +140,6 @@
       </div>
     </div>
 
-    <!-- Editor con Keyboard Learn -->
     <div class="card">
       <h2>Editor Scorciatoie</h2>
 
@@ -162,21 +149,20 @@
       </div>
 
       <div class="form-group">
-        <label>ID Hardware MIDI (es. note_36)</label>
+        <label>ID Hardware MIDI</label>
         <input type="text" id="midi-code-input" placeholder="Premi il pad durante la calibrazione">
       </div>
 
       <div class="form-group">
         <label>Tipo di Azione</label>
         <select id="action-type" onchange="updateFormFields()">
-          <option value="hotkey">Combinazione Tasti Tastiera (Keyboard Learn)</option>
-          <option value="text">Incolla Testo / Snippet</option>
+          <option value="hotkey">Combinazione Tasti (Keyboard Learn)</option>
+          <option value="text">Incolla Testo</option>
           <option value="media">Controllo Multimediale</option>
           <option value="system">Funzione di Sistema</option>
         </select>
       </div>
 
-      <!-- Sezione Keyboard Learn Interattiva -->
       <div class="form-group" id="field-hotkey">
         <label>Scorciatoia Tastiera</label>
         <div class="key-learn-box">
@@ -187,7 +173,7 @@
 
       <div class="form-group" id="field-text" style="display:none;">
         <label>Testo da digitare/incollare</label>
-        <textarea id="target-text" rows="3" placeholder="Scrivi il testo da incollare..."></textarea>
+        <textarea id="target-text" rows="3" placeholder="Scrivi il testo..."></textarea>
       </div>
 
       <div class="form-group" id="field-media" style="display:none;">
@@ -220,9 +206,6 @@
   </div>
 
   <script>
-    // -------------------------------------------------------------
-    // GESTIONE PRESET E ARCHIVIAZIONE LOCALE
-    // -------------------------------------------------------------
     const BANKS = ['PAD_A', 'PAD_B', 'CLIP_A', 'CLIP_B'];
     let currentBank = 'PAD_A';
     let selectedSlotIndex = 0;
@@ -234,9 +217,7 @@
     if (!appData.presets) {
       appData = {
         activePreset: 'Predefinito',
-        presets: {
-          'Predefinito': initBlankPreset()
-        }
+        presets: { 'Predefinito': initBlankPreset() }
       };
     }
 
@@ -265,7 +246,7 @@
     }
 
     function createNewPreset() {
-      const name = prompt("Nome del nuovo preset (es. Scrittura, Photoshop):");
+      const name = prompt("Nome del nuovo preset:");
       if (!name || appData.presets[name]) return;
       appData.presets[name] = initBlankPreset();
       appData.activePreset = name;
@@ -277,10 +258,7 @@
 
     function deleteCurrentPreset() {
       const names = Object.keys(appData.presets);
-      if (names.length <= 1) {
-        alert("Devi mantenere almeno un preset.");
-        return;
-      }
+      if (names.length <= 1) return alert("Devi mantenere almeno un preset.");
       if (confirm(`Eliminare il preset "${appData.activePreset}"?`)) {
         delete appData.presets[appData.activePreset];
         appData.activePreset = Object.keys(appData.presets)[0];
@@ -302,9 +280,6 @@
       localStorage.setItem('icreativ_presets_db', JSON.stringify(appData));
     }
 
-    // -------------------------------------------------------------
-    // KEYBOARD LEARN ENGINE (Ascolta i tasti premuti fisicamente)
-    // -------------------------------------------------------------
     function toggleKeyLearn() {
       keyLearnActive = !keyLearnActive;
       heldKeys.clear();
@@ -316,24 +291,18 @@
     window.addEventListener('keydown', (e) => {
       if (!keyLearnActive) return;
       e.preventDefault();
-
       let keyName = e.key;
       if (keyName === 'Control') keyName = 'Ctrl';
       if (keyName === ' ') keyName = 'Space';
-
       heldKeys.add(keyName);
       document.getElementById('target-hotkey').value = Array.from(heldKeys).join(' + ');
     });
 
-    window.addEventListener('keyup', (e) => {
+    window.addEventListener('keyup', () => {
       if (!keyLearnActive) return;
-      // Termina la registrazione al rilascio del tasto principale
       toggleKeyLearn();
     });
 
-    // -------------------------------------------------------------
-    // RENDER PADS & TABELLA
-    // -------------------------------------------------------------
     function renderPads() {
       const container = document.getElementById('pads-container');
       container.innerHTML = '';
@@ -464,11 +433,9 @@
       renderMappingsTable();
     }
 
-    // -------------------------------------------------------------
-    // WEBSOCKET BRIDGE CLIENT (Invia l'azione a Windows)
-    // -------------------------------------------------------------
+    // GESTIONE WEBSOCKET SENZA TENTATIVI A RAFFICA
     let ws = null;
-    function connectBridge() {
+    function tryBridgeOnce() {
       try {
         ws = new WebSocket('ws://127.0.0.1:8765');
         ws.onopen = () => {
@@ -480,25 +447,51 @@
           const b = document.getElementById('bridge-status');
           b.textContent = 'PC Bridge: Non Attivo';
           b.classList.remove('bridge-on');
-          setTimeout(connectBridge, 2000); // Riconnessione continua
         };
-      } catch (e) {}
+        ws.onerror = () => {
+          ws = null;
+        };
+      } catch (e) {
+        ws = null;
+      }
     }
-    connectBridge();
+    tryBridgeOnce();
 
-    // -------------------------------------------------------------
-    // WEB MIDI & ROUTING
-    // -------------------------------------------------------------
+    // WEB MIDI ENGINE
     if (navigator.requestMIDIAccess) {
-      navigator.requestMIDIAccess({ sysex: true }).then(onMIDISuccess, () => {});
+      navigator.requestMIDIAccess({ sysex: true }).then(onMIDISuccess, onMIDIFail);
+    } else {
+      document.getElementById('midi-status').textContent = 'MIDI non supportato';
     }
 
     function onMIDISuccess(midiAccess) {
+      let count = 0;
       for (let input of midiAccess.inputs.values()) {
         input.onmidimessage = handleIncomingMIDI;
         document.getElementById('midi-status').textContent = `MIDI: ${input.name}`;
         document.getElementById('midi-status').classList.add('online');
+        count++;
       }
+      if (count === 0) {
+        document.getElementById('midi-status').textContent = 'MIDI: Nessun controller rilevato';
+      }
+
+      midiAccess.onstatechange = (e) => {
+        if (e.port.type === 'input') {
+          if (e.port.state === 'connected') {
+            e.port.onmidimessage = handleIncomingMIDI;
+            document.getElementById('midi-status').textContent = `MIDI: ${e.port.name}`;
+            document.getElementById('midi-status').classList.add('online');
+          } else {
+            document.getElementById('midi-status').textContent = 'MIDI: Scollegato';
+            document.getElementById('midi-status').classList.remove('online');
+          }
+        }
+      };
+    }
+
+    function onMIDIFail() {
+      document.getElementById('midi-status').textContent = 'MIDI: Accesso Negato';
     }
 
     function handleIncomingMIDI(event) {
@@ -511,7 +504,6 @@
 
       const preset = getActivePresetData();
 
-      // Modalità Calibrazione Pad
       if (autoAssignMode && isPress) {
         preset[currentBank][selectedSlotIndex].midiCode = code;
         document.getElementById('midi-code-input').value = code;
@@ -522,7 +514,6 @@
         return;
       }
 
-      // Esecuzione Normale
       let targetBank = null, targetIdx = -1;
       for (let b of BANKS) {
         const found = preset[b].findIndex(s => s.midiCode === code);
