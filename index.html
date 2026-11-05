@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>i-Creativ Macro Pad</title>
+  <!-- PWA Manifest Inline -->
+  <link rel="manifest" href="data:application/manifest+json;utf-8,%7B%22name%22%3A%22i-Creativ%20Macro%22%2C%22short_name%22%3A%22iCreativ%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23121212%22%2C%22theme_color%22%3A%22%2300e676%22%7D">
+  <style>
+    :root {
+      --bg: #121417;
+      --surface: #1e2228;
+      --border: #2c323d;
+      --accent: #00e676;
+      --text: #f0f3f6;
+      --text-muted: #8b949e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    h1 { font-size: 1.3rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .status { font-size: 0.85rem; padding: 4px 10px; border-radius: 12px; background: #333; color: var(--text-muted); }
+    .status.online { background: rgba(0, 230, 118, 0.15); color: var(--accent); }
+    
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .card h2 { font-size: 1rem; margin-bottom: 12px; }
+
+    /* Pad Grid */
+    .pads-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .pad-btn {
+      background: #282e38; border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); aspect-ratio: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer;
+      transition: background 0.1s, transform 0.05s;
+    }
+    .pad-btn.active { background: var(--accent); color: #000; transform: scale(0.96); }
+    .pad-btn.mapped { border-color: var(--accent); }
+
+    /* Mapping form */
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
+    input, select {
+      width: 100%; padding: 8px 12px; background: #16191d; border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 0.9rem;
+    }
+    .btn {
+      padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer;
+      background: var(--accent); color: #000;
+    }
+    .btn-secondary { background: #333a44; color: var(--text); margin-left: 8px; }
+    
+    #log { font-family: monospace; font-size: 0.75rem; color: var(--text-muted); height: 120px; overflow-y: auto; background: #0c0e10; padding: 8px; border-radius: 4px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>i-Creativ Macro Studio</h1>
+    <div id="midi-status" class="status">In attesa di controller MIDI...</div>
+  </header>
+
+  <div class="grid">
+    <!-- Visual Controller / Learn -->
+    <div class="card">
+      <h2>Pannello Pad i-Creativ (1-8)</h2>
+      <div class="pads-grid" id="pads-container"></div>
+      <div id="log">Monitor eventi MIDI in arrivo...</div>
+    </div>
+
+    <!-- Mapping & Profile Config -->
+    <div class="card">
+      <h2>Editor Tasti Rapidi</h2>
+      <div class="form-group">
+        <label>Profilo Applicazione</label>
+        <select id="profile-select">
+          <option value="default">Default / Desktop</option>
+          <option value="photoshop">Photoshop</option>
+          <option value="browser">Browser Web</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Controllo MIDI Selezionato</label>
+        <input type="text" id="selected-control" readonly value="Premi un tasto sull'i-Creativ">
+      </div>
+
+      <div class="form-group">
+        <label>Scorciatoia o Comando da simulare</label>
+        <input type="text" id="target-hotkey" placeholder="Es: CTRL+Z oppure WIN+D">
+      </div>
+
+      <button class="btn" id="save-map-btn">Salva Mappatura</button>
+      <button class="btn btn-secondary" id="export-btn">Esporta JSON</button>
+    </div>
+  </div>
+
+  <script>
+    // 1. Database Mappature (localStorage)
+    let mappings = JSON.parse(localStorage.getItem('icreativ_maps') || '{}');
+    let currentControlKey = null;
+    let wsBridge = null;
+
+    // Tentativo connessione micro-agente locale per premere i tasti di sistema
+    function initWebSocket() {
+      try {
+        wsBridge = new WebSocket('ws://127.0.0.1:8080');
+        wsBridge.onopen = () => log("Bridge locale di sistema collegato (OK scorciatoie globali)");
+        wsBridge.onerror = () => log("Bridge locale non attivo: l'app funziona in modalità MIDI Monitor");
+      } catch (e) {}
+    }
+
+    // 2. Inizializzazione Pad Virtuali (1 a 8)
+    const padsContainer = document.getElementById('pads-container');
+    for (let i = 0; i < 8; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'pad-btn';
+      btn.id = `pad-${36 + i}`;
+      btn.innerHTML = `<strong>Pad ${i + 1}</strong><span>Note ${36 + i}</span>`;
+      padsContainer.appendChild(btn);
+    }
+
+    // 3. Web MIDI Access
+    if (navigator.requestMIDIAccess) {
+      navigator.requestMIDIAccess({ sysex: true }).then(onMIDISuccess, onMIDIFailure);
+    } else {
+      document.getElementById('midi-status').textContent = 'Web MIDI non supportato dal browser';
+    }
+
+    function onMIDISuccess(midiAccess) {
+      const inputs = midiAccess.inputs.values();
+      let connected = false;
+      for (let input of inputs) {
+        input.onmidimessage = handleMIDIMessage;
+        connected = true;
+        document.getElementById('midi-status').textContent = `Connesso: ${input.name}`;
+        document.getElementById('midi-status').classList.add('online');
+      }
+      if (!connected) document.getElementById('midi-status').textContent = 'Nessun controller collegato';
+    }
+
+    function onMIDIFailure() {
+      document.getElementById('midi-status').textContent = 'Permesso MIDI negato';
+    }
+
+    // 4. Gestione Messaggi MIDI in ingresso (MIDI Learn)
+    function handleMIDIMessage(event) {
+      const [status, data1, data2] = event.data;
+      const cmd = status >> 4;
+      const channel = status & 0xf;
+
+      let keyId = null;
+      if (cmd === 9 && data2 > 0) { // Note ON
+        keyId = `note_${data1}`;
+        visualFeedback(data1, true);
+      } else if (cmd === 8 || (cmd === 9 && data2 === 0)) { // Note OFF
+        visualFeedback(data1, false);
+        return;
+      } else if (cmd === 11) { // Control Change
+        keyId = `cc_${data1}`;
+      }
+
+      if (keyId) {
+        currentControlKey = keyId;
+        document.getElementById('selected-control').value = `${keyId} (Valore: ${data2})`;
+        log(`MIDI In: [${keyId}] Valore: ${data2}`);
+        triggerAction(keyId);
+      }
+    }
+
+    function visualFeedback(note, active) {
+      const el = document.getElementById(`pad-${note}`);
+      if (el) {
+        if (active) el.classList.add('active');
+        else el.classList.remove('active');
+      }
+    }
+
+    function log(msg) {
+      const l = document.getElementById('log');
+      l.innerHTML = `> ${msg}<br>` + l.innerHTML;
+    }
+
+    // 5. Trigger Azione o Invio al Bridge
+    function triggerAction(keyId) {
+      const profile = document.getElementById('profile-select').value;
+      const action = mappings[profile]?.[keyId];
+      if (action) {
+        log(`Esecuzione comando: ${action}`);
+        if (wsBridge && wsBridge.readyState === WebSocket.OPEN) {
+          wsBridge.send(JSON.stringify({ hotkey: action }));
+        }
+      }
+    }
+
+    // 6. Salvataggio ed Esportazione
+    document.getElementById('save-map-btn').addEventListener('click', () => {
+      const profile = document.getElementById('profile-select').value;
+      const hotkey = document.getElementById('target-hotkey').value.trim();
+      if (!currentControlKey || !hotkey) return;
+
+      if (!mappings[profile]) mappings[profile] = {};
+      mappings[profile][currentControlKey] = hotkey;
+      localStorage.setItem('icreativ_maps', JSON.stringify(mappings));
+      log(`Salvato ${currentControlKey} -> ${hotkey} su [${profile}]`);
+    });
+  </script>
+</body>
+</html>
