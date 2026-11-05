@@ -3,177 +3,382 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>i-Creativ Macro Pad</title>
-  <!-- PWA Manifest Inline -->
-  <link rel="manifest" href="data:application/manifest+json;utf-8,%7B%22name%22%3A%22i-Creativ%20Macro%22%2C%22short_name%22%3A%22iCreativ%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23121212%22%2C%22theme_color%22%3A%22%2300e676%22%7D">
+  <title>i-Creativ Master Pad 32</title>
+  <link rel="manifest" href="data:application/manifest+json;utf-8,%7B%22name%22%3A%22i-Creativ%20Macro%20Pad%22%2C%22short_name%22%3A%22iCreativ%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23121417%22%2C%22theme_color%22%3A%22%2300e676%22%7D">
   <style>
     :root {
-      --bg: #121417;
-      --surface: #1e2228;
-      --border: #2c323d;
+      --bg: #0f1216;
+      --surface: #181c24;
+      --surface-hover: #222733;
+      --border: #2b3342;
       --accent: #00e676;
-      --text: #f0f3f6;
-      --text-muted: #8b949e;
+      --accent-clip: #ff9100;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --danger: #ff5252;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 20px; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    h1 { font-size: 1.3rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-    .status { font-size: 0.85rem; padding: 4px 10px; border-radius: 12px; background: #333; color: var(--text-muted); }
-    .status.online { background: rgba(0, 230, 118, 0.15); color: var(--accent); }
+    body { background: var(--bg); color: var(--text); padding: 18px; line-height: 1.4; }
     
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
-    .card h2 { font-size: 1rem; margin-bottom: 12px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
+    h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
+    .badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; background: #263238; color: var(--accent); }
+    .status { font-size: 0.85rem; padding: 6px 12px; border-radius: 20px; background: #222; color: var(--text-muted); border: 1px solid var(--border); }
+    .status.online { border-color: var(--accent); color: var(--accent); background: rgba(0, 230, 118, 0.1); }
+
+    .main-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .card h2 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+
+    /* Bank Selector Navigation */
+    .bank-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+    .bank-btn {
+      padding: 10px 4px; background: #13171f; border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text-muted); font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center;
+      transition: all 0.15s;
+    }
+    .bank-btn:hover { background: var(--surface-hover); }
+    .bank-btn.active-pad { background: rgba(0, 230, 118, 0.15); border-color: var(--accent); color: var(--accent); }
+    .bank-btn.active-clip { background: rgba(255, 145, 0, 0.15); border-color: var(--accent-clip); color: var(--accent-clip); }
 
     /* Pad Grid */
-    .pads-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-    .pad-btn {
-      background: #282e38; border: 1px solid var(--border); border-radius: 6px;
-      color: var(--text); aspect-ratio: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer;
-      transition: background 0.1s, transform 0.05s;
+    .pads-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    .pad-slot {
+      background: #1b212c; border: 2px solid var(--border); border-radius: 8px;
+      aspect-ratio: 1; padding: 8px; display: flex; flex-direction: column; justify-content: space-between;
+      cursor: pointer; transition: all 0.1s ease; user-select: none; position: relative;
     }
-    .pad-btn.active { background: var(--accent); color: #000; transform: scale(0.96); }
-    .pad-btn.mapped { border-color: var(--accent); }
+    .pad-slot:hover { border-color: #4b5563; }
+    .pad-slot.selected { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+    .pad-slot.active { background: var(--accent) !important; color: #000 !important; transform: scale(0.97); }
+    .pad-slot.active * { color: #000 !important; }
+    .pad-slot.is-mapped { border-color: var(--accent); }
+    .pad-slot.is-clip.is-mapped { border-color: var(--accent-clip); }
 
-    /* Mapping form */
-    .form-group { margin-bottom: 12px; }
-    label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
-    input, select {
-      width: 100%; padding: 8px 12px; background: #16191d; border: 1px solid var(--border);
-      border-radius: 6px; color: var(--text); font-size: 0.9rem;
+    .pad-header { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: bold; }
+    .pad-midi-code { font-size: 0.68rem; color: var(--text-muted); font-family: monospace; }
+    .pad-action-preview { font-size: 0.72rem; word-break: break-all; margin-top: auto; color: #fff; font-weight: 600; }
+
+    /* Form & Editor */
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px; font-weight: 600; }
+    input, select, textarea {
+      width: 100%; padding: 9px 12px; background: #11141a; border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 0.88rem; outline: none;
     }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+    .btn-row { display: flex; gap: 8px; margin-top: 14px; }
     .btn {
-      padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer;
-      background: var(--accent); color: #000;
+      flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: 700; font-size: 0.85rem;
+      cursor: pointer; background: var(--accent); color: #000; transition: opacity 0.15s;
     }
-    .btn-secondary { background: #333a44; color: var(--text); margin-left: 8px; }
-    
-    #log { font-family: monospace; font-size: 0.75rem; color: var(--text-muted); height: 120px; overflow-y: auto; background: #0c0e10; padding: 8px; border-radius: 4px; margin-top: 12px; }
+    .btn:hover { opacity: 0.9; }
+    .btn-danger { background: #2f1d24; color: var(--danger); border: 1px solid rgba(255,82,82,0.3); }
+    .btn-learn { background: #263238; color: #38bdf8; border: 1px solid #0284c7; }
+    .btn-learn.learning { background: #0284c7; color: #fff; animation: pulse 1s infinite alternate; }
+
+    @keyframes pulse { from { opacity: 0.7; } to { opacity: 1; } }
+
+    #log { font-family: monospace; font-size: 0.72rem; color: var(--text-muted); height: 95px; overflow-y: auto; background: #0a0c0e; padding: 8px; border-radius: 6px; border: 1px solid var(--border); }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>i-Creativ Macro Studio</h1>
+    <h1>i-Creativ Master Pad <span class="badge">32 Trigger Engine</span></h1>
     <div id="midi-status" class="status">In attesa di controller MIDI...</div>
   </header>
 
-  <div class="grid">
-    <!-- Visual Controller / Learn -->
+  <div class="main-grid">
+    <!-- Visual Controller Matrix -->
     <div class="card">
-      <h2>Pannello Pad i-Creativ (1-8)</h2>
+      <h2>
+        <span>Matrice Controlli</span>
+        <button id="learn-btn" class="btn btn-learn" style="width: auto; padding: 4px 10px; font-size: 0.75rem;">MIDI Learn: OFF</button>
+      </h2>
+
+      <!-- Selettore Sezioni e Banchi -->
+      <div class="bank-nav">
+        <button class="bank-btn active-pad" onclick="switchBank('PAD_A')">PAD - A (1-8)</button>
+        <button class="bank-btn" onclick="switchBank('PAD_B')">PAD - B (9-16)</button>
+        <button class="bank-btn" onclick="switchBank('CLIP_A')">CLIP - A (1-8)</button>
+        <button class="bank-btn" onclick="switchBank('CLIP_B')">CLIP - B (9-16)</button>
+      </div>
+
+      <!-- Griglia 8 Pad del Banco Attivo -->
       <div class="pads-grid" id="pads-container"></div>
-      <div id="log">Monitor eventi MIDI in arrivo...</div>
+
+      <div id="log">Monitor eventi: collega l'i-Creativ e premi un tasto...</div>
     </div>
 
-    <!-- Mapping & Profile Config -->
+    <!-- Multi-Function Action Editor -->
     <div class="card">
-      <h2>Editor Tasti Rapidi</h2>
+      <h2>Configuratore Tasti Rapidi</h2>
+
       <div class="form-group">
-        <label>Profilo Applicazione</label>
-        <select id="profile-select">
-          <option value="default">Default / Desktop</option>
-          <option value="photoshop">Photoshop</option>
-          <option value="browser">Browser Web</option>
+        <label>Pad Selezionato</label>
+        <input type="text" id="slot-id-label" readonly value="Nessun pad selezionato">
+      </div>
+
+      <div class="form-group">
+        <label>ID Hardware MIDI Assegnato</label>
+        <input type="text" id="midi-code-input" placeholder="Es: note_36 oppure cc_1">
+      </div>
+
+      <div class="form-group">
+        <label>Tipo di Azione</label>
+        <select id="action-type" onchange="updateFormFields()">
+          <option value="hotkey">Combinazione Tasti Rapidi (Shortcut)</option>
+          <option value="media">Controllo Multimediale OS</option>
+          <option value="system">Funzione di Sistema</option>
+          <option value="text">Incolla Testo / Snippet</option>
+          <option value="launch">Esegui Comando / Apri URL</option>
         </select>
       </div>
 
-      <div class="form-group">
-        <label>Controllo MIDI Selezionato</label>
-        <input type="text" id="selected-control" readonly value="Premi un tasto sull'i-Creativ">
+      <div class="form-group" id="field-hotkey">
+        <label>Combinazione Tasti</label>
+        <input type="text" id="target-hotkey" placeholder="es: CTRL+Z, ALT+TAB, CTRL+SHIFT+P">
       </div>
 
-      <div class="form-group">
-        <label>Scorciatoia o Comando da simulare</label>
-        <input type="text" id="target-hotkey" placeholder="Es: CTRL+Z oppure WIN+D">
+      <div class="form-group" id="field-media" style="display:none;">
+        <label>Comando Player</label>
+        <select id="target-media">
+          <option value="play_pause">Play / Pausa</option>
+          <option value="volume_up">Volume +</option>
+          <option value="volume_down">Volume -</option>
+          <option value="mute">Mute Audio</option>
+          <option value="next_track">Traccia Successiva</option>
+          <option value="prev_track">Traccia Precedente</option>
+        </select>
       </div>
 
-      <button class="btn" id="save-map-btn">Salva Mappatura</button>
-      <button class="btn btn-secondary" id="export-btn">Esporta JSON</button>
+      <div class="form-group" id="field-system" style="display:none;">
+        <label>Comando Sistema Operativo</label>
+        <select id="target-system">
+          <option value="show_desktop">Mostra Desktop (Win+D)</option>
+          <option value="screenshot">Cattura Schermata (Win+Shift+S)</option>
+          <option value="task_manager">Gestione Attività (Ctrl+Shift+Esc)</option>
+          <option value="lock_pc">Blocca Computer (Win+L)</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="field-text" style="display:none;">
+        <label>Testo da digitare/incollare</label>
+        <textarea id="target-text" rows="3" placeholder="Scrivi qui il testo da inserire automaticamente..."></textarea>
+      </div>
+
+      <div class="form-group" id="field-launch" style="display:none;">
+        <label>Percorso File o URL</label>
+        <input type="text" id="target-launch" placeholder="https://youtube.com oppure C:\Program Files\App.exe">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" onclick="saveCurrentSlot()">Salva Pad</button>
+        <button class="btn btn-danger" onclick="clearCurrentSlot()">Resetta</button>
+      </div>
     </div>
   </div>
 
   <script>
-    // 1. Database Mappature (localStorage)
-    let mappings = JSON.parse(localStorage.getItem('icreativ_maps') || '{}');
-    let currentControlKey = null;
-    let wsBridge = null;
+    // 1. Database Strutturato a 32 Slot (4 Banchi x 8)
+    const BANKS = ['PAD_A', 'PAD_B', 'CLIP_A', 'CLIP_B'];
+    let currentBank = 'PAD_A';
+    let selectedSlotIndex = 0;
+    let isLearning = false;
 
-    // Tentativo connessione micro-agente locale per premere i tasti di sistema
-    function initWebSocket() {
-      try {
-        wsBridge = new WebSocket('ws://127.0.0.1:8080');
-        wsBridge.onopen = () => log("Bridge locale di sistema collegato (OK scorciatoie globali)");
-        wsBridge.onerror = () => log("Bridge locale non attivo: l'app funziona in modalità MIDI Monitor");
-      } catch (e) {}
+    // Recupero Mappe da localStorage
+    let slotsConfig = JSON.parse(localStorage.getItem('icreativ_slots_v2') || '{}');
+
+    // Inizializza gli slot vuoti se non presenti
+    BANKS.forEach(bank => {
+      if (!slotsConfig[bank]) {
+        slotsConfig[bank] = Array.from({ length: 8 }, (_, i) => ({
+          midiCode: '',
+          type: 'hotkey',
+          action: ''
+        }));
+      }
+    });
+
+    // 2. Render dei Pad a Schermo
+    function renderPads() {
+      const container = document.getElementById('pads-container');
+      container.innerHTML = '';
+      const isClip = currentBank.startsWith('CLIP');
+
+      slotsConfig[currentBank].forEach((slot, idx) => {
+        const div = document.createElement('div');
+        div.className = `pad-slot ${isClip ? 'is-clip' : ''} ${slot.action ? 'is-mapped' : ''} ${selectedSlotIndex === idx ? 'selected' : ''}`;
+        div.id = `slot-element-${idx}`;
+        div.onclick = () => selectSlot(idx);
+
+        const padNumber = (currentBank.endsWith('_B') ? 8 : 0) + idx + 1;
+        const prefix = isClip ? 'CLIP' : 'PAD';
+
+        div.innerHTML = `
+          <div class="pad-header">
+            <span>${prefix} ${padNumber}</span>
+          </div>
+          <div class="pad-midi-code">${slot.midiCode || 'Non Mappato'}</div>
+          <div class="pad-action-preview">${slot.action ? formatActionPreview(slot) : '-'}</div>
+        `;
+        container.appendChild(div);
+      });
+
+      populateForm(slotsConfig[currentBank][selectedSlotIndex]);
     }
 
-    // 2. Inizializzazione Pad Virtuali (1 a 8)
-    const padsContainer = document.getElementById('pads-container');
-    for (let i = 0; i < 8; i++) {
-      const btn = document.createElement('button');
-      btn.className = 'pad-btn';
-      btn.id = `pad-${36 + i}`;
-      btn.innerHTML = `<strong>Pad ${i + 1}</strong><span>Note ${36 + i}</span>`;
-      padsContainer.appendChild(btn);
+    function formatActionPreview(slot) {
+      if (slot.type === 'hotkey') return slot.action;
+      if (slot.type === 'media') return `🎵 ${slot.action}`;
+      if (slot.type === 'system') return `⚙️ ${slot.action}`;
+      if (slot.type === 'text') return `📝 "${slot.action.substring(0, 10)}..."`;
+      if (slot.type === 'launch') return `🚀 ${slot.action.substring(0, 10)}...`;
+      return slot.action;
     }
 
-    // 3. Web MIDI Access
+    function switchBank(bankName) {
+      currentBank = bankName;
+      document.querySelectorAll('.bank-btn').forEach(btn => {
+        btn.classList.remove('active-pad', 'active-clip');
+        if (btn.innerText.includes(bankName.replace('_', ' - '))) {
+          btn.classList.add(bankName.startsWith('CLIP') ? 'active-clip' : 'active-pad');
+        }
+      });
+      renderPads();
+    }
+
+    function selectSlot(idx) {
+      selectedSlotIndex = idx;
+      renderPads();
+    }
+
+    // 3. Gestione Form Editor Funzioni
+    function updateFormFields() {
+      const type = document.getElementById('action-type').value;
+      ['hotkey', 'media', 'system', 'text', 'launch'].forEach(f => {
+        document.getElementById(`field-${f}`).style.display = (f === type) ? 'block' : 'none';
+      });
+    }
+
+    function populateForm(slot) {
+      const padNumber = (currentBank.endsWith('_B') ? 8 : 0) + selectedSlotIndex + 1;
+      document.getElementById('slot-id-label').value = `${currentBank} -> Slot #${padNumber}`;
+      document.getElementById('midi-code-input').value = slot.midiCode || '';
+      document.getElementById('action-type').value = slot.type || 'hotkey';
+
+      // Imposta i campi
+      document.getElementById('target-hotkey').value = (slot.type === 'hotkey') ? slot.action : '';
+      document.getElementById('target-media').value = (slot.type === 'media') ? slot.action : 'play_pause';
+      document.getElementById('target-system').value = (slot.type === 'system') ? slot.action : 'show_desktop';
+      document.getElementById('target-text').value = (slot.type === 'text') ? slot.action : '';
+      document.getElementById('target-launch').value = (slot.type === 'launch') ? slot.action : '';
+
+      updateFormFields();
+    }
+
+    function saveCurrentSlot() {
+      const type = document.getElementById('action-type').value;
+      let actionValue = '';
+
+      if (type === 'hotkey') actionValue = document.getElementById('target-hotkey').value.trim();
+      else if (type === 'media') actionValue = document.getElementById('target-media').value;
+      else if (type === 'system') actionValue = document.getElementById('target-system').value;
+      else if (type === 'text') actionValue = document.getElementById('target-text').value;
+      else if (type === 'launch') actionValue = document.getElementById('target-launch').value.trim();
+
+      slotsConfig[currentBank][selectedSlotIndex] = {
+        midiCode: document.getElementById('midi-code-input').value.trim(),
+        type: type,
+        action: actionValue
+      };
+
+      localStorage.setItem('icreativ_slots_v2', JSON.stringify(slotsConfig));
+      log(`Salvato ${currentBank} [#${selectedSlotIndex+1}] -> ${actionValue}`);
+      renderPads();
+    }
+
+    function clearCurrentSlot() {
+      slotsConfig[currentBank][selectedSlotIndex] = { midiCode: '', type: 'hotkey', action: '' };
+      localStorage.setItem('icreativ_slots_v2', JSON.stringify(slotsConfig));
+      renderPads();
+    }
+
+    // 4. Connessione Web MIDI & Auto Learn
     if (navigator.requestMIDIAccess) {
-      navigator.requestMIDIAccess({ sysex: true }).then(onMIDISuccess, onMIDIFailure);
-    } else {
-      document.getElementById('midi-status').textContent = 'Web MIDI non supportato dal browser';
+      navigator.requestMIDIAccess({ sysex: true }).then(onMIDISuccess, () => {
+        document.getElementById('midi-status').textContent = 'Errore autorizzazione MIDI';
+      });
     }
 
     function onMIDISuccess(midiAccess) {
-      const inputs = midiAccess.inputs.values();
-      let connected = false;
-      for (let input of inputs) {
-        input.onmidimessage = handleMIDIMessage;
-        connected = true;
+      for (let input of midiAccess.inputs.values()) {
+        input.onmidimessage = handleIncomingMIDI;
         document.getElementById('midi-status').textContent = `Connesso: ${input.name}`;
         document.getElementById('midi-status').classList.add('online');
       }
-      if (!connected) document.getElementById('midi-status').textContent = 'Nessun controller collegato';
     }
 
-    function onMIDIFailure() {
-      document.getElementById('midi-status').textContent = 'Permesso MIDI negato';
-    }
-
-    // 4. Gestione Messaggi MIDI in ingresso (MIDI Learn)
-    function handleMIDIMessage(event) {
+    function handleIncomingMIDI(event) {
       const [status, data1, data2] = event.data;
       const cmd = status >> 4;
-      const channel = status & 0xf;
+      let incomingCode = null;
+      let isPress = false;
 
-      let keyId = null;
-      if (cmd === 9 && data2 > 0) { // Note ON
-        keyId = `note_${data1}`;
-        visualFeedback(data1, true);
-      } else if (cmd === 8 || (cmd === 9 && data2 === 0)) { // Note OFF
-        visualFeedback(data1, false);
-        return;
-      } else if (cmd === 11) { // Control Change
-        keyId = `cc_${data1}`;
+      if (cmd === 9) { // Note
+        incomingCode = `note_${data1}`;
+        isPress = data2 > 0;
+      } else if (cmd === 11) { // CC
+        incomingCode = `cc_${data1}`;
+        isPress = data2 > 0;
       }
 
-      if (keyId) {
-        currentControlKey = keyId;
-        document.getElementById('selected-control').value = `${keyId} (Valore: ${data2})`;
-        log(`MIDI In: [${keyId}] Valore: ${data2}`);
-        triggerAction(keyId);
+      if (!incomingCode) return;
+
+      log(`MIDI Ricevuto: ${incomingCode} | Valore: ${data2}`);
+
+      // Modalità MIDI Learn: associa subito il tasto premuto allo slot selezionato
+      if (isLearning && isPress) {
+        document.getElementById('midi-code-input').value = incomingCode;
+        slotsConfig[currentBank][selectedSlotIndex].midiCode = incomingCode;
+        saveCurrentSlot();
+        setLearnMode(false);
+        return;
+      }
+
+      // Animazione visiva e trigger se il codice appartiene a uno slot del banco corrente
+      slotsConfig[currentBank].forEach((slot, idx) => {
+        if (slot.midiCode === incomingCode) {
+          const el = document.getElementById(`slot-element-${idx}`);
+          if (el) {
+            if (isPress) el.classList.add('active');
+            else el.classList.remove('active');
+          }
+          if (isPress && slot.action) {
+            triggerAction(slot);
+          }
+        }
+      });
+    }
+
+    function triggerAction(slot) {
+      log(`⚡ Eseguo [${slot.type}]: ${slot.action}`);
+      // Invia comando al bridge locale (se attivo)
+      if (window.wsBridge && window.wsBridge.readyState === WebSocket.OPEN) {
+        window.wsBridge.send(JSON.stringify(slot));
       }
     }
 
-    function visualFeedback(note, active) {
-      const el = document.getElementById(`pad-${note}`);
-      if (el) {
-        if (active) el.classList.add('active');
-        else el.classList.remove('active');
-      }
+    // Tasto MIDI Learn Toggle
+    const learnBtn = document.getElementById('learn-btn');
+    learnBtn.onclick = () => setLearnMode(!isLearning);
+
+    function setLearnMode(val) {
+      isLearning = val;
+      learnBtn.textContent = isLearning ? 'Premi sul controller...' : 'MIDI Learn: OFF';
+      learnBtn.classList.toggle('learning', isLearning);
     }
 
     function log(msg) {
@@ -181,29 +386,8 @@
       l.innerHTML = `> ${msg}<br>` + l.innerHTML;
     }
 
-    // 5. Trigger Azione o Invio al Bridge
-    function triggerAction(keyId) {
-      const profile = document.getElementById('profile-select').value;
-      const action = mappings[profile]?.[keyId];
-      if (action) {
-        log(`Esecuzione comando: ${action}`);
-        if (wsBridge && wsBridge.readyState === WebSocket.OPEN) {
-          wsBridge.send(JSON.stringify({ hotkey: action }));
-        }
-      }
-    }
-
-    // 6. Salvataggio ed Esportazione
-    document.getElementById('save-map-btn').addEventListener('click', () => {
-      const profile = document.getElementById('profile-select').value;
-      const hotkey = document.getElementById('target-hotkey').value.trim();
-      if (!currentControlKey || !hotkey) return;
-
-      if (!mappings[profile]) mappings[profile] = {};
-      mappings[profile][currentControlKey] = hotkey;
-      localStorage.setItem('icreativ_maps', JSON.stringify(mappings));
-      log(`Salvato ${currentControlKey} -> ${hotkey} su [${profile}]`);
-    });
+    // Inizializza vista iniziale
+    renderPads();
   </script>
 </body>
 </html>
