@@ -3,350 +3,178 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>i-Creativ Controller Standalone</title>
+  <title>i-Creativ Macro Pad</title>
   <style>
     :root {
-      --bg: #0f1216;
-      --surface: #181c24;
-      --border: #2c3340;
+      --bg: #121417;
+      --surface: #1e2228;
+      --border: #2c323d;
       --accent: #00e676;
-      --accent-clip: #ff9100;
-      --text: #f1f5f9;
+      --text: #f0f3f6;
       --text-muted: #8b949e;
-      --danger: #ff5252;
-      --learn: #38bdf8;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 16px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    h1 { font-size: 1.3rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .status { font-size: 0.85rem; padding: 4px 10px; border-radius: 12px; background: #333; color: var(--text-muted); }
+    .status.online { background: rgba(0, 230, 118, 0.15); color: var(--accent); }
+    
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .card h2 { font-size: 1rem; margin-bottom: 12px; }
 
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-    h1 { font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .status { font-size: 0.8rem; padding: 5px 12px; border-radius: 16px; background: #222; color: var(--text-muted); border: 1px solid var(--border); font-weight: 600; }
-    .status.online { border-color: var(--accent); color: var(--accent); background: rgba(0, 230, 118, 0.12); }
-
-    .live-monitor {
-      background: #080a0d; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
-      margin-bottom: 14px; display: flex; gap: 14px; font-family: monospace; font-size: 0.82rem; align-items: center;
+    /* Pad Grid */
+    .pads-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .pad-btn {
+      background: #282e38; border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); aspect-ratio: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer;
+      transition: background 0.1s, transform 0.05s;
     }
-    .badge { background: #1f2937; padding: 2px 8px; border-radius: 4px; color: var(--learn); font-weight: bold; }
+    .pad-btn.active { background: var(--accent); color: #000; transform: scale(0.96); }
+    .pad-btn.mapped { border-color: var(--accent); }
 
-    .grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-    .card h2 { font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; display: flex; justify-content: space-between; }
-
-    .bank-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
-    .bank-btn {
-      padding: 8px 4px; background: #10141c; border: 1px solid var(--border); border-radius: 6px;
-      color: var(--text-muted); font-size: 0.74rem; font-weight: bold; cursor: pointer; text-align: center;
+    /* Mapping form */
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
+    input, select {
+      width: 100%; padding: 8px 12px; background: #16191d; border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 0.9rem;
     }
-    .bank-btn.active-pad { background: rgba(0, 230, 118, 0.15); border-color: var(--accent); color: var(--accent); }
-    .bank-btn.active-clip { background: rgba(255, 145, 0, 0.15); border-color: var(--accent-clip); color: var(--accent-clip); }
-
-    .pads-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
-    .pad-slot {
-      background: #10141c; border: 2px solid var(--border); border-radius: 8px;
-      aspect-ratio: 1; padding: 6px; display: flex; flex-direction: column; justify-content: space-between;
-      cursor: pointer; user-select: none; transition: transform 0.05s;
-    }
-    .pad-slot.selected { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.25); }
-    .pad-slot.active { background: var(--accent) !important; color: #000 !important; transform: scale(0.95); }
-    .pad-slot.is-clip.active { background: var(--accent-clip) !important; color: #000 !important; }
-    .pad-slot.is-mapped { border-color: rgba(0, 230, 118, 0.6); }
-
-    .pad-header { font-size: 0.74rem; font-weight: bold; }
-    .pad-code { font-size: 0.65rem; color: var(--text-muted); font-family: monospace; }
-    .pad-action { font-size: 0.7rem; font-weight: 600; color: #fff; }
-
-    .form-group { margin-bottom: 10px; }
-    label { display: block; font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
-    input, select, textarea {
-      width: 100%; padding: 8px; background: #10141c; border: 1px solid var(--border);
-      border-radius: 6px; color: var(--text); font-size: 0.85rem; outline: none;
-    }
-    input:focus, select:focus { border-color: var(--accent); }
-
-    .btn-row { display: flex; gap: 6px; margin-top: 12px; }
     .btn {
-      flex: 1; padding: 8px; border-radius: 6px; border: none; font-weight: 700; font-size: 0.8rem;
-      cursor: pointer; background: var(--accent); color: #000;
+      padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer;
+      background: var(--accent); color: #000;
     }
-    .btn-small { padding: 4px 8px; font-size: 0.72rem; flex: none; }
-    .btn-learn { background: #1e293b; color: var(--learn); border: 1px solid #0284c7; }
-    .btn-learn.recording { background: #0284c7; color: #fff; }
-    .btn-danger { background: #21262d; color: var(--danger); border: 1px solid rgba(255,82,82,0.3); }
-
-    #log { font-family: monospace; font-size: 0.72rem; color: var(--text-muted); height: 85px; overflow-y: auto; background: #080a0d; padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
+    .btn-secondary { background: #333a44; color: var(--text); margin-left: 8px; }
+    
+    #log { font-family: monospace; font-size: 0.75rem; color: var(--text-muted); height: 120px; overflow-y: auto; background: #0c0e10; padding: 8px; border-radius: 4px; margin-top: 12px; }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>i-Creativ Controller Matrix</h1>
-    <div id="midi-status" class="status">Inizializzazione MIDI...</div>
+    <h1>i-Creativ Macro Studio</h1>
+    <div id="midi-status" class="status">In attesa di controller MIDI...</div>
   </header>
-
-  <div class="live-monitor">
-    <span>Segnale In Arrivo:</span>
-    <span class="badge" id="live-type">NESSUNO</span>
-    <span>ID: <strong id="live-id" style="color:#fff;">-</strong></span>
-    <span>Val: <strong id="live-val" style="color:#fff;">-</strong></span>
-  </div>
 
   <div class="grid">
     <div class="card">
-      <h2>
-        <span>32 Pad Matrix</span>
-        <button id="assign-btn" class="btn btn-learn btn-small" onclick="toggleAutoAssign()">Calibra Pad: OFF</button>
-      </h2>
-
-      <div class="bank-nav">
-        <button class="bank-btn active-pad" id="btn-PAD_A" onclick="switchBank('PAD_A')">PAD - A (1-8)</button>
-        <button class="bank-btn" id="btn-PAD_B" onclick="switchBank('PAD_B')">PAD - B (9-16)</button>
-        <button class="bank-btn" id="btn-CLIP_A" onclick="switchBank('CLIP_A')">CLIP - A (1-8)</button>
-        <button class="bank-btn" id="btn-CLIP_B" onclick="switchBank('CLIP_B')">CLIP - B (9-16)</button>
-      </div>
-
+      <h2>Pannello Pad i-Creativ (1-8)</h2>
       <div class="pads-grid" id="pads-container"></div>
-      <div id="log">Monitor eventi attivo...</div>
+      <div id="log">Monitor eventi MIDI in arrivo...</div>
     </div>
 
     <div class="card">
-      <h2>Editor Controllo</h2>
-
+      <h2>Editor Tasti Rapidi</h2>
       <div class="form-group">
-        <label>Pad Selezionato</label>
-        <input type="text" id="slot-id-label" readonly value="Pad non selezionato">
-      </div>
-
-      <div class="form-group">
-        <label>ID Hardware MIDI (es. note_36 o cc_16)</label>
-        <input type="text" id="midi-code-input" placeholder="Premi un pad durante la calibrazione">
-      </div>
-
-      <div class="form-group">
-        <label>Tipo Azione</label>
-        <select id="action-type" onchange="updateFormFields()">
-          <option value="hotkey">Combinazione Tasti</option>
-          <option value="text">Testo da digitare</option>
-          <option value="media">Controllo Audio</option>
+        <label>Profilo Applicazione</label>
+        <select id="profile-select">
+          <option value="default">Default / Desktop</option>
+          <option value="photoshop">Photoshop</option>
+          <option value="browser">Browser Web</option>
         </select>
       </div>
 
-      <div class="form-group" id="field-hotkey">
-        <label>Combinazione Scorciatoia</label>
-        <input type="text" id="target-hotkey" placeholder="es: Ctrl + C">
+      <div class="form-group">
+        <label>Controllo MIDI Selezionato</label>
+        <input type="text" id="selected-control" readonly value="Premi un tasto sull'i-Creativ">
       </div>
 
-      <div class="form-group" id="field-text" style="display:none;">
-        <label>Testo</label>
-        <textarea id="target-text" rows="2" placeholder="Testo automatico..."></textarea>
+      <div class="form-group">
+        <label>Scorciatoia o Comando da simulare</label>
+        <input type="text" id="target-hotkey" placeholder="Es: CTRL+Z oppure WIN+D">
       </div>
 
-      <div class="form-group" id="field-media" style="display:none;">
-        <label>Comando Audio</label>
-        <select id="target-media">
-          <option value="play_pause">Play / Pausa</option>
-          <option value="volume_up">Volume Su</option>
-          <option value="volume_down">Volume Giù</option>
-          <option value="mute">Mute</option>
-        </select>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn" onclick="saveCurrentSlot()">Salva Pad</button>
-        <button class="btn btn-danger" onclick="clearCurrentSlot()">Resetta</button>
-      </div>
+      <button class="btn" id="save-map-btn">Salva Mappatura</button>
+      <button class="btn btn-secondary" id="export-btn">Esporta JSON</button>
     </div>
   </div>
 
   <script>
-    // Disregistra vecchi Service Worker che bloccavano la cache
+    // 1. Pulizia totale vecchi registri e service worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        for (let reg of regs) reg.unregister();
-      });
-    }
-
-    const BANKS = ['PAD_A', 'PAD_B', 'CLIP_A', 'CLIP_B'];
-    let currentBank = 'PAD_A';
-    let selectedSlotIndex = 0;
-    let autoAssignMode = false;
-
-    let slotsConfig = JSON.parse(localStorage.getItem('icreativ_config_clean') || '{}');
-    BANKS.forEach(b => {
-      if (!slotsConfig[b]) {
-        slotsConfig[b] = Array.from({ length: 8 }, () => ({ midiCode: '', type: 'hotkey', action: '' }));
-      }
-    });
-
-    function renderPads() {
-      const container = document.getElementById('pads-container');
-      container.innerHTML = '';
-      const isClip = currentBank.startsWith('CLIP');
-
-      slotsConfig[currentBank].forEach((slot, idx) => {
-        const div = document.createElement('div');
-        const isSelected = selectedSlotIndex === idx;
-        div.className = `pad-slot ${isClip ? 'is-clip' : ''} ${slot.action ? 'is-mapped' : ''} ${isSelected ? 'selected' : ''}`;
-        div.id = `slot-${currentBank}-${idx}`;
-        div.onclick = () => selectSlot(idx);
-
-        const padNumber = (currentBank.endsWith('_B') ? 8 : 0) + idx + 1;
-        div.innerHTML = `
-          <div class="pad-header"><span>${isClip ? 'CLIP' : 'PAD'} ${padNumber}</span></div>
-          <div class="pad-code">${slot.midiCode || 'Non Assegnato'}</div>
-          <div class="pad-action">${slot.action || '-'}</div>
-        `;
-        container.appendChild(div);
-      });
-
-      populateForm(slotsConfig[currentBank][selectedSlotIndex]);
-    }
-
-    function switchBank(bank) {
-      currentBank = bank;
-      document.querySelectorAll('.bank-btn').forEach(btn => btn.classList.remove('active-pad', 'active-clip'));
-      document.getElementById(`btn-${bank}`).classList.add(bank.startsWith('CLIP') ? 'active-clip' : 'active-pad');
-      renderPads();
-    }
-
-    function selectSlot(idx) {
-      selectedSlotIndex = idx;
-      renderPads();
-    }
-
-    function toggleAutoAssign() {
-      autoAssignMode = !autoAssignMode;
-      const btn = document.getElementById('assign-btn');
-      btn.textContent = autoAssignMode ? 'Calibra Pad: IN ASCOLTO' : 'Calibra Pad: OFF';
-      btn.classList.toggle('recording', autoAssignMode);
-      renderPads();
-    }
-
-    function updateFormFields() {
-      const type = document.getElementById('action-type').value;
-      ['hotkey', 'text', 'media'].forEach(f => {
-        document.getElementById(`field-${f}`).style.display = (f === type) ? 'block' : 'none';
-      });
-    }
-
-    function populateForm(slot) {
-      if (!slot) return;
-      const padNum = (currentBank.endsWith('_B') ? 8 : 0) + selectedSlotIndex + 1;
-      document.getElementById('slot-id-label').value = `${currentBank} -> Pad #${padNum}`;
-      document.getElementById('midi-code-input').value = slot.midiCode || '';
-      document.getElementById('action-type').value = slot.type || 'hotkey';
-      document.getElementById('target-hotkey').value = (slot.type === 'hotkey') ? slot.action : '';
-      document.getElementById('target-text').value = (slot.type === 'text') ? slot.action : '';
-      document.getElementById('target-media').value = (slot.type === 'media') ? slot.action : 'play_pause';
-      updateFormFields();
-    }
-
-    function saveCurrentSlot() {
-      const type = document.getElementById('action-type').value;
-      let val = '';
-      if (type === 'hotkey') val = document.getElementById('target-hotkey').value.trim();
-      else if (type === 'text') val = document.getElementById('target-text').value;
-      else if (type === 'media') val = document.getElementById('target-media').value;
-
-      slotsConfig[currentBank][selectedSlotIndex] = {
-        midiCode: document.getElementById('midi-code-input').value.trim(),
-        type: type,
-        action: val
-      };
-
-      localStorage.setItem('icreativ_config_clean', JSON.stringify(slotsConfig));
-      log(`Salvato ${currentBank} [#${selectedSlotIndex+1}]`);
-      renderPads();
-    }
-
-    function clearCurrentSlot() {
-      slotsConfig[currentBank][selectedSlotIndex] = { midiCode: '', type: 'hotkey', action: '' };
-      localStorage.setItem('icreativ_config_clean', JSON.stringify(slotsConfig));
-      renderPads();
-    }
-
-    // WEB MIDI ENGINE NATIVO DIRETTO
-    if (navigator.requestMIDIAccess) {
-      navigator.requestMIDIAccess({ sysex: true }).then(onMIDISuccess, onMIDIFail);
-    } else {
-      document.getElementById('midi-status').textContent = 'MIDI non supportato';
-    }
-
-    function onMIDISuccess(midiAccess) {
-      const updateInputs = () => {
-        const inputs = Array.from(midiAccess.inputs.values());
-        if (inputs.length > 0) {
-          inputs.forEach(input => {
-            input.onmidimessage = handleMIDI;
-          });
-          document.getElementById('midi-status').textContent = `MIDI: ${inputs[0].name}`;
-          document.getElementById('midi-status').classList.add('online');
-        } else {
-          document.getElementById('midi-status').textContent = 'MIDI: Nessun controller';
-          document.getElementById('midi-status').classList.remove('online');
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+          registration.unregister();
         }
-      };
-
-      updateInputs();
-      midiAccess.onstatechange = updateInputs;
+      });
     }
 
-    function onMIDIFail() {
-      document.getElementById('midi-status').textContent = 'MIDI: Accesso Negato';
+    let mappings = JSON.parse(localStorage.getItem('icreativ_maps') || '{}');
+    let currentControlKey = null;
+
+    // 2. Inizializzazione Pad Virtuali
+    const padsContainer = document.getElementById('pads-container');
+    for (let i = 0; i < 8; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'pad-btn';
+      btn.id = `pad-${36 + i}`;
+      btn.innerHTML = `<strong>Pad ${i + 1}</strong><span>Note ${36 + i}</span>`;
+      padsContainer.appendChild(btn);
     }
 
-    function handleMIDI(event) {
-      const [status, data1, data2] = event.data;
-      const cmd = status >> 4;
-      let code = null;
-      let isPress = false;
-
-      if (cmd === 9) {
-        code = `note_${data1}`;
-        isPress = data2 > 0;
-      } else if (cmd === 8) {
-        code = `note_${data1}`;
-        isPress = false;
-      } else if (cmd === 11) {
-        code = `cc_${data1}`;
-        isPress = data2 > 0;
-      }
-
-      if (!code) return;
-
-      document.getElementById('live-type').textContent = (cmd === 9 ? 'NOTE' : 'CC');
-      document.getElementById('live-id').textContent = code;
-      document.getElementById('live-val').textContent = data2;
-
-      // Se in modalità calibrazione
-      if (autoAssignMode && isPress) {
-        slotsConfig[currentBank][selectedSlotIndex].midiCode = code;
-        document.getElementById('midi-code-input').value = code;
-        localStorage.setItem('icreativ_config_clean', JSON.stringify(slotsConfig));
-        log(`Calibrato ${currentBank} Pad #${selectedSlotIndex+1} con ${code}`);
-        if (selectedSlotIndex < 7) selectedSlotIndex++;
-        renderPads();
+    // 3. Web MIDI Nativo
+    function initMIDI() {
+      if (!navigator.requestMIDIAccess) {
+        document.getElementById('midi-status').textContent = 'Web MIDI non supportato';
         return;
       }
 
-      // Esecuzione e feedback
-      let targetBank = null, targetIdx = -1;
-      for (let b of BANKS) {
-        const found = slotsConfig[b].findIndex(s => s.midiCode === code);
-        if (found !== -1) { targetBank = b; targetIdx = found; break; }
+      navigator.requestMIDIAccess({ sysex: true }).then(
+        (midiAccess) => {
+          function scan() {
+            const inputs = Array.from(midiAccess.inputs.values());
+            if (inputs.length > 0) {
+              inputs.forEach(input => {
+                input.onmidimessage = handleMIDIMessage;
+              });
+              document.getElementById('midi-status').textContent = `Connesso: ${inputs[0].name}`;
+              document.getElementById('midi-status').classList.add('online');
+              log(`Dispositivo pronto: ${inputs[0].name}`);
+            } else {
+              document.getElementById('midi-status').textContent = 'Nessun controller collegato';
+              document.getElementById('midi-status').classList.remove('online');
+            }
+          }
+
+          scan();
+          midiAccess.onstatechange = () => scan();
+        },
+        () => {
+          document.getElementById('midi-status').textContent = 'Permesso MIDI negato';
+        }
+      );
+    }
+
+    // 4. Gestione Messaggi
+    function handleMIDIMessage(event) {
+      const [status, data1, data2] = event.data;
+      const cmd = status >> 4;
+
+      let keyId = null;
+      if (cmd === 9 && data2 > 0) {
+        keyId = `note_${data1}`;
+        visualFeedback(data1, true);
+      } else if (cmd === 8 || (cmd === 9 && data2 === 0)) {
+        visualFeedback(data1, false);
+        return;
+      } else if (cmd === 11) {
+        keyId = `cc_${data1}`;
       }
 
-      if (targetBank !== null && targetIdx !== -1) {
-        if (isPress) {
-          if (currentBank !== targetBank) switchBank(targetBank);
-          selectSlot(targetIdx);
-        }
-        const el = document.getElementById(`slot-${targetBank}-${targetIdx}`);
-        if (el) {
-          if (isPress) el.classList.add('active');
-          else el.classList.remove('active');
-        }
+      if (keyId) {
+        currentControlKey = keyId;
+        document.getElementById('selected-control').value = `${keyId} (Valore: ${data2})`;
+        log(`MIDI In: [${keyId}] Valore: ${data2}`);
+      }
+    }
+
+    function visualFeedback(note, active) {
+      const el = document.getElementById(`pad-${note}`);
+      if (el) {
+        if (active) el.classList.add('active');
+        else el.classList.remove('active');
       }
     }
 
@@ -355,7 +183,8 @@
       l.innerHTML = `> ${msg}<br>` + l.innerHTML;
     }
 
-    renderPads();
+    // Avvio
+    initMIDI();
   </script>
 </body>
 </html>
