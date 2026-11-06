@@ -3,7 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>i-Creativ Master Pad & Macro Hub</title>
+  <title>i-Creativ Master Pad Hub</title>
+  <link rel="manifest" href="./manifest.json">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
   <style>
     :root {
       --bg: #0d1015;
@@ -17,7 +25,7 @@
       --learn: #38bdf8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 16px; line-height: 1.4; }
+    body { background: var(--bg); color: var(--text); padding: 16px; line-height: 1.4; user-select: none; }
 
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
     h1 { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
@@ -55,7 +63,7 @@
     .pad-slot {
       background: #0d1117; border: 2px solid var(--border); border-radius: 8px;
       aspect-ratio: 1; padding: 6px; display: flex; flex-direction: column; justify-content: space-between;
-      cursor: pointer; transition: transform 0.05s ease; user-select: none;
+      cursor: pointer; transition: transform 0.05s ease;
     }
     .pad-slot.selected { border-color: #f0f6fc; box-shadow: 0 0 10px rgba(240, 246, 252, 0.3); }
     .pad-slot.active { background: var(--accent) !important; color: #000 !important; transform: scale(0.95); }
@@ -188,7 +196,7 @@
       </div>
 
       <div class="form-group" id="field-system" style="display:none;">
-        <label>Azione Finestre / Finestra Attiva</label>
+        <label>Azione Finestre / Sistema</label>
         <select id="target-system">
           <option value="switch_app">Passa alla Prossima App (Alt + Tab)</option>
           <option value="prev_app">Passa all'App Precedente (Alt + Shift + Tab)</option>
@@ -227,6 +235,9 @@
     let singleLearnMode = false;
     let keyLearnActive = false;
     let heldKeys = new Set();
+
+    let lastTriggerTime = 0;
+    let lastTriggerCode = '';
 
     let appData = JSON.parse(localStorage.getItem('icreativ_master_db') || '{}');
     if (!appData.presets) {
@@ -460,7 +471,7 @@
       renderMappingsTable();
     }
 
-    // SILENT BRIDGE DISPATCHER (Invio comandi a Windows senza errori a schermo)
+    // SILENT BRIDGE DISPATCHER
     let ws = null;
     function connectBridge() {
       try {
@@ -524,20 +535,43 @@
     function handleIncomingMIDI(event, portName) {
       const [status, data1, data2] = event.data;
       const cmd = status >> 4;
-      let code = (cmd === 9) ? `note_${data1}` : (cmd === 11 ? `cc_${data1}` : null);
-      let isPress = data2 > 0 && cmd !== 8;
+      
+      const isPress = (cmd === 9 && data2 > 0) || (cmd === 11 && data2 > 0);
+      const isRelease = (cmd === 8) || (cmd === 9 && data2 === 0);
+      const preset = getActivePresetData();
 
-      if (!code) return;
+      // Rilascio: spegne l'evidenziazione visiva
+      if (isRelease) {
+        let releaseCode = `note_${data1}`;
+        for (let b of BANKS) {
+          const idx = preset[b].findIndex(s => s.midiCode === releaseCode);
+          if (idx !== -1) {
+            const el = document.getElementById(`slot-element-${b}-${idx}`);
+            if (el) el.classList.remove('active');
+          }
+        }
+        return;
+      }
+
+      if (!isPress) return;
+
+      let code = (cmd === 9) ? `note_${data1}` : `cc_${data1}`;
+
+      // Debounce di 150ms: scarta la seconda porta virtuale simultanea
+      const now = Date.now();
+      if (code === lastTriggerCode && (now - lastTriggerTime) < 150) {
+        return;
+      }
+      lastTriggerTime = now;
+      lastTriggerCode = code;
 
       document.getElementById('live-type').textContent = (cmd === 9 ? 'NOTE' : 'CC');
       document.getElementById('live-id').textContent = code;
       document.getElementById('live-val').textContent = data2;
       document.getElementById('live-port').textContent = `Porta: ${portName}`;
 
-      const preset = getActivePresetData();
-
       // MIDI Learn Singolo
-      if (singleLearnMode && isPress) {
+      if (singleLearnMode) {
         preset[currentBank][selectedSlotIndex].midiCode = code;
         document.getElementById('midi-code-input').value = code;
         saveDatabase();
@@ -548,7 +582,7 @@
       }
 
       // Calibrazione Automatica Pad
-      if (autoAssignMode && isPress) {
+      if (autoAssignMode) {
         preset[currentBank][selectedSlotIndex].midiCode = code;
         document.getElementById('midi-code-input').value = code;
         saveDatabase();
@@ -562,7 +596,7 @@
         return;
       }
 
-      // Ricerca ed esecuzione comando
+      // Ricerca ed esecuzione comando singolo
       let targetBank = null, targetIdx = -1;
       for (let b of BANKS) {
         const found = preset[b].findIndex(s => s.midiCode === code);
@@ -570,19 +604,14 @@
       }
 
       if (targetBank !== null && targetIdx !== -1) {
-        if (isPress) {
-          if (currentBank !== targetBank) switchBank(targetBank);
-          selectSlot(targetIdx);
-          const slot = preset[targetBank][targetIdx];
-          if (slot.action) {
-            sendToBridge(slot);
-          }
+        if (currentBank !== targetBank) switchBank(targetBank);
+        selectSlot(targetIdx);
+        const slot = preset[targetBank][targetIdx];
+        if (slot.action) {
+          sendToBridge(slot);
         }
         const el = document.getElementById(`slot-element-${targetBank}-${targetIdx}`);
-        if (el) {
-          if (isPress) el.classList.add('active');
-          else el.classList.remove('active');
-        }
+        if (el) el.classList.add('active');
       }
     }
 
