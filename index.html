@@ -24,7 +24,6 @@
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
     .card h2 { font-size: 1rem; margin-bottom: 12px; }
 
-    /* Pad Grid */
     .pads-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     .pad-btn {
       background: #282e38; border: 1px solid var(--border); border-radius: 6px;
@@ -33,9 +32,7 @@
       transition: background 0.1s, transform 0.05s;
     }
     .pad-btn.active { background: var(--accent); color: #000; transform: scale(0.96); }
-    .pad-btn.mapped { border-color: var(--accent); }
 
-    /* Mapping form */
     .form-group { margin-bottom: 12px; }
     label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
     input, select {
@@ -48,73 +45,50 @@
     }
     .btn-secondary { background: #333a44; color: var(--text); margin-left: 8px; }
     
-    #log { font-family: monospace; font-size: 0.75rem; color: var(--text-muted); height: 120px; overflow-y: auto; background: #0c0e10; padding: 8px; border-radius: 4px; margin-top: 12px; }
+    #log { font-family: monospace; font-size: 0.75rem; color: var(--text-muted); height: 140px; overflow-y: auto; background: #0c0e10; padding: 8px; border-radius: 4px; margin-top: 12px; line-height: 1.5; }
   </style>
 </head>
 <body>
 
   <header>
     <h1>i-Creativ Macro Studio</h1>
-    <div id="midi-status" class="status">In attesa di controller MIDI...</div>
+    <div id="midi-status" class="status">In attesa...</div>
   </header>
 
   <div class="grid">
     <div class="card">
       <h2>Pannello Pad i-Creativ (1-8)</h2>
       <div class="pads-grid" id="pads-container"></div>
-      <div id="log">Monitor eventi MIDI in arrivo...</div>
+      <div id="log">Monitor eventi attivo...</div>
     </div>
 
     <div class="card">
       <h2>Editor Tasti Rapidi</h2>
       <div class="form-group">
-        <label>Profilo Applicazione</label>
-        <select id="profile-select">
-          <option value="default">Default / Desktop</option>
-          <option value="photoshop">Photoshop</option>
-          <option value="browser">Browser Web</option>
-        </select>
+        <label>Controllo MIDI Ricevuto</label>
+        <input type="text" id="selected-control" readonly value="Premi un pad per testare">
       </div>
 
       <div class="form-group">
-        <label>Controllo MIDI Selezionato</label>
-        <input type="text" id="selected-control" readonly value="Premi un tasto sull'i-Creativ">
+        <label>Scorciatoia o Testo</label>
+        <input type="text" id="target-hotkey" placeholder="Es: CTRL+C o Salva">
       </div>
 
-      <div class="form-group">
-        <label>Scorciatoia o Comando da simulare</label>
-        <input type="text" id="target-hotkey" placeholder="Es: CTRL+Z oppure WIN+D">
-      </div>
-
-      <button class="btn" id="save-map-btn">Salva Mappatura</button>
-      <button class="btn btn-secondary" id="export-btn">Esporta JSON</button>
+      <button class="btn" id="save-map-btn">Salva</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('log').innerHTML=''">Pulisci Log</button>
     </div>
   </div>
 
   <script>
-    // 1. Pulizia totale vecchi registri e service worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        for (let registration of registrations) {
-          registration.unregister();
-        }
-      });
-    }
-
-    let mappings = JSON.parse(localStorage.getItem('icreativ_maps') || '{}');
-    let currentControlKey = null;
-
-    // 2. Inizializzazione Pad Virtuali
     const padsContainer = document.getElementById('pads-container');
     for (let i = 0; i < 8; i++) {
       const btn = document.createElement('button');
       btn.className = 'pad-btn';
-      btn.id = `pad-${36 + i}`;
-      btn.innerHTML = `<strong>Pad ${i + 1}</strong><span>Note ${36 + i}</span>`;
+      btn.id = `pad-index-${i}`;
+      btn.innerHTML = `<strong>Pad ${i + 1}</strong><span id="note-label-${i}">-</span>`;
       padsContainer.appendChild(btn);
     }
 
-    // 3. Web MIDI Nativo
     function initMIDI() {
       if (!navigator.requestMIDIAccess) {
         document.getElementById('midi-status').textContent = 'Web MIDI non supportato';
@@ -123,55 +97,58 @@
 
       navigator.requestMIDIAccess({ sysex: true }).then(
         (midiAccess) => {
-          function scan() {
+          function setupInputs() {
             const inputs = Array.from(midiAccess.inputs.values());
             if (inputs.length > 0) {
-              inputs.forEach(input => {
-                input.onmidimessage = handleMIDIMessage;
-              });
-              document.getElementById('midi-status').textContent = `Connesso: ${inputs[0].name}`;
+              const names = inputs.map(i => i.name).join(' + ');
+              document.getElementById('midi-status').textContent = `Connesso: ${names}`;
               document.getElementById('midi-status').classList.add('online');
-              log(`Dispositivo pronto: ${inputs[0].name}`);
+              
+              inputs.forEach((input) => {
+                log(`Ascolto attivo su porta: [${input.name}]`);
+                input.onmidimessage = (event) => handleIncoming(event, input.name);
+              });
             } else {
               document.getElementById('midi-status').textContent = 'Nessun controller collegato';
               document.getElementById('midi-status').classList.remove('online');
             }
           }
 
-          scan();
-          midiAccess.onstatechange = () => scan();
+          setupInputs();
+          midiAccess.onstatechange = setupInputs;
         },
         () => {
-          document.getElementById('midi-status').textContent = 'Permesso MIDI negato';
+          document.getElementById('midi-status').textContent = 'Permesso negato';
         }
       );
     }
 
-    // 4. Gestione Messaggi
-    function handleMIDIMessage(event) {
-      const [status, data1, data2] = event.data;
+    function handleIncoming(event, portName) {
+      const data = Array.from(event.data);
+      const [status, data1, data2] = data;
       const cmd = status >> 4;
+      const channel = (status & 0x0F) + 1;
 
-      let keyId = null;
+      let msgDesc = `Porta: ${portName} | Byte: [${data.join(', ')}] | Ch: ${channel}`;
+
       if (cmd === 9 && data2 > 0) {
-        keyId = `note_${data1}`;
-        visualFeedback(data1, true);
+        msgDesc += ` -> NOTA ON: ${data1} (Vel: ${data2})`;
+        document.getElementById('selected-control').value = `Nota ${data1} (Ch ${channel})`;
+        triggerVisual(data1, true);
       } else if (cmd === 8 || (cmd === 9 && data2 === 0)) {
-        visualFeedback(data1, false);
-        return;
+        msgDesc += ` -> NOTA OFF: ${data1}`;
+        triggerVisual(data1, false);
       } else if (cmd === 11) {
-        keyId = `cc_${data1}`;
+        msgDesc += ` -> CC: ${data1} (Val: ${data2})`;
+        document.getElementById('selected-control').value = `CC ${data1} (Val: ${data2})`;
       }
 
-      if (keyId) {
-        currentControlKey = keyId;
-        document.getElementById('selected-control').value = `${keyId} (Valore: ${data2})`;
-        log(`MIDI In: [${keyId}] Valore: ${data2}`);
-      }
+      log(msgDesc);
     }
 
-    function visualFeedback(note, active) {
-      const el = document.getElementById(`pad-${note}`);
+    function triggerVisual(note, active) {
+      // Evidenzia il primo pad libero o associato
+      const el = document.getElementById('pad-index-0');
       if (el) {
         if (active) el.classList.add('active');
         else el.classList.remove('active');
@@ -183,7 +160,6 @@
       l.innerHTML = `> ${msg}<br>` + l.innerHTML;
     }
 
-    // Avvio
     initMIDI();
   </script>
 </body>
