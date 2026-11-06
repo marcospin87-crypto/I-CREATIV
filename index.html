@@ -3,92 +3,448 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>i-Creativ Macro Pad</title>
+  <title>i-Creativ Master Pad & Macro Hub</title>
   <style>
     :root {
-      --bg: #121417;
-      --surface: #1e2228;
-      --border: #2c323d;
+      --bg: #0d1015;
+      --surface: #161b22;
+      --border: #30363d;
       --accent: #00e676;
-      --text: #f0f3f6;
+      --accent-clip: #ff9100;
+      --text: #f0f6fc;
       --text-muted: #8b949e;
+      --danger: #f85149;
+      --learn: #38bdf8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 20px; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    h1 { font-size: 1.3rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-    .status { font-size: 0.85rem; padding: 4px 10px; border-radius: 12px; background: #333; color: var(--text-muted); }
-    .status.online { background: rgba(0, 230, 118, 0.15); color: var(--accent); }
-    
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
-    .card h2 { font-size: 1rem; margin-bottom: 12px; }
+    body { background: var(--bg); color: var(--text); padding: 16px; line-height: 1.4; }
 
-    .pads-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-    .pad-btn {
-      background: #282e38; border: 1px solid var(--border); border-radius: 6px;
-      color: var(--text); aspect-ratio: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer;
-      transition: background 0.1s, transform 0.05s;
-    }
-    .pad-btn.active { background: var(--accent); color: #000; transform: scale(0.96); }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    h1 { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .status-group { display: flex; gap: 8px; }
+    .status { font-size: 0.78rem; padding: 4px 10px; border-radius: 14px; background: #161b22; color: var(--text-muted); border: 1px solid var(--border); font-weight: 600; }
+    .status.online { border-color: var(--accent); color: var(--accent); background: rgba(0, 230, 118, 0.1); }
 
-    .form-group { margin-bottom: 12px; }
-    label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
-    input, select {
-      width: 100%; padding: 8px 12px; background: #16191d; border: 1px solid var(--border);
-      border-radius: 6px; color: var(--text); font-size: 0.9rem;
+    .live-monitor {
+      background: #080a0c; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+      margin-bottom: 12px; display: flex; gap: 14px; font-family: monospace; font-size: 0.8rem; align-items: center;
     }
+    .badge { background: #21262d; padding: 2px 8px; border-radius: 4px; color: var(--learn); font-weight: bold; }
+
+    .preset-bar {
+      display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; align-items: center;
+    }
+    .preset-bar label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .preset-bar select { flex: 1; padding: 6px 10px; background: #0d1117; border: 1px solid var(--border); border-radius: 6px; color: #fff; }
+
+    .main-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+    .card h2 { font-size: 0.88rem; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+
+    .bank-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+    .bank-btn {
+      padding: 8px 4px; background: #0d1117; border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text-muted); font-size: 0.75rem; font-weight: 700; cursor: pointer; text-align: center;
+    }
+    .bank-btn.active-pad { background: rgba(0, 230, 118, 0.15); border-color: var(--accent); color: var(--accent); }
+    .bank-btn.active-clip { background: rgba(255, 145, 0, 0.15); border-color: var(--accent-clip); color: var(--accent-clip); }
+
+    .pads-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+    .pad-slot {
+      background: #0d1117; border: 2px solid var(--border); border-radius: 8px;
+      aspect-ratio: 1; padding: 6px; display: flex; flex-direction: column; justify-content: space-between;
+      cursor: pointer; transition: transform 0.05s ease; user-select: none;
+    }
+    .pad-slot.selected { border-color: #f0f6fc; box-shadow: 0 0 10px rgba(240, 246, 252, 0.3); }
+    .pad-slot.active { background: var(--accent) !important; color: #000 !important; transform: scale(0.95); }
+    .pad-slot.is-clip.active { background: var(--accent-clip) !important; color: #000 !important; }
+    .pad-slot.is-mapped { border-color: rgba(0, 230, 118, 0.6); }
+
+    .pad-header { font-size: 0.75rem; font-weight: bold; }
+    .pad-midi-code { font-size: 0.65rem; color: var(--text-muted); font-family: monospace; }
+    .pad-action-preview { font-size: 0.7rem; font-weight: 600; color: #fff; word-break: break-all; }
+
+    .form-group { margin-bottom: 10px; }
+    label { display: block; font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
+    input, select, textarea {
+      width: 100%; padding: 8px 10px; background: #0d1117; border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 0.85rem; outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+    .key-learn-box { display: flex; gap: 6px; align-items: center; }
+    .btn-row { display: flex; gap: 6px; margin-top: 12px; }
     .btn {
-      padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer;
-      background: var(--accent); color: #000;
+      flex: 1; padding: 8px; border-radius: 6px; border: none; font-weight: 700; font-size: 0.8rem;
+      cursor: pointer; background: var(--accent); color: #000;
     }
-    .btn-secondary { background: #333a44; color: var(--text); margin-left: 8px; }
-    
-    #log { font-family: monospace; font-size: 0.75rem; color: var(--text-muted); height: 140px; overflow-y: auto; background: #0c0e10; padding: 8px; border-radius: 4px; margin-top: 12px; line-height: 1.5; }
+    .btn-small { padding: 5px 8px; font-size: 0.72rem; flex: none; }
+    .btn-learn { background: #1e293b; color: var(--learn); border: 1px solid #0284c7; }
+    .btn-learn.recording { background: #0284c7; color: #fff; animation: pulse 0.7s infinite alternate; }
+    .btn-danger { background: #21262d; color: var(--danger); border: 1px solid rgba(248,81,73,0.3); }
+
+    .table-container { margin-top: 16px; background: #080a0c; border: 1px solid var(--border); border-radius: 6px; max-height: 160px; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.74rem; text-align: left; }
+    th { background: #11151c; color: var(--text-muted); padding: 6px 8px; position: sticky; top: 0; }
+    td { padding: 6px 8px; border-bottom: 1px solid #161b22; }
+    tr:hover td { background: #11151c; }
+    .actions-cell { display: flex; gap: 4px; }
+
+    @keyframes pulse { from { opacity: 0.6; } to { opacity: 1; } }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>i-Creativ Macro Studio</h1>
-    <div id="midi-status" class="status">In attesa...</div>
+    <h1>i-Creativ Master Pad Hub</h1>
+    <div class="status-group">
+      <div id="midi-status" class="status">Inizializzazione MIDI...</div>
+    </div>
   </header>
 
-  <div class="grid">
+  <div class="live-monitor">
+    <span>Segnale Rilevato:</span>
+    <span class="badge" id="live-type">NESSUNO</span>
+    <span>ID: <strong id="live-id" style="color:#fff;">-</strong></span>
+    <span>Val: <strong id="live-val" style="color:#fff;">-</strong></span>
+    <span style="margin-left:auto; color:var(--text-muted);" id="live-port">Porta: -</span>
+  </div>
+
+  <div class="preset-bar">
+    <label>Preset:</label>
+    <select id="preset-selector" onchange="loadSelectedPreset()"></select>
+    <button class="btn btn-small" onclick="createNewPreset()">+ Nuovo</button>
+    <button class="btn btn-danger btn-small" onclick="deleteCurrentPreset()">Elimina</button>
+  </div>
+
+  <div class="main-grid">
     <div class="card">
-      <h2>Pannello Pad i-Creativ (1-8)</h2>
+      <h2>
+        <span>Matrice 32 Pad</span>
+        <button id="assign-btn" class="btn btn-learn btn-small" onclick="toggleAutoAssign()">Calibra Pad: OFF</button>
+      </h2>
+
+      <div class="bank-nav">
+        <button class="bank-btn active-pad" id="btn-PAD_A" onclick="switchBank('PAD_A')">PAD - A (1-8)</button>
+        <button class="bank-btn" id="btn-PAD_B" onclick="switchBank('PAD_B')">PAD - B (9-16)</button>
+        <button class="bank-btn" id="btn-CLIP_A" onclick="switchBank('CLIP_A')">CLIP - A (1-8)</button>
+        <button class="bank-btn" id="btn-CLIP_B" onclick="switchBank('CLIP_B')">CLIP - B (9-16)</button>
+      </div>
+
       <div class="pads-grid" id="pads-container"></div>
-      <div id="log">Monitor eventi attivo...</div>
+
+      <h2 style="margin-top: 14px; margin-bottom: 6px;">Elenco Mappature del Preset</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Banco / Pad</th>
+              <th>MIDI</th>
+              <th>Tipo</th>
+              <th>Azione</th>
+              <th>Operazioni</th>
+            </tr>
+          </thead>
+          <tbody id="mappings-table-body"></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="card">
-      <h2>Editor Tasti Rapidi</h2>
+      <h2>Editor Controllo & Scorciatoie</h2>
+
       <div class="form-group">
-        <label>Controllo MIDI Ricevuto</label>
-        <input type="text" id="selected-control" readonly value="Premi un pad per testare">
+        <label>Pad Selezionato</label>
+        <input type="text" id="slot-id-label" readonly value="Nessun pad selezionato">
       </div>
 
       <div class="form-group">
-        <label>Scorciatoia o Testo</label>
-        <input type="text" id="target-hotkey" placeholder="Es: CTRL+C o Salva">
+        <label>ID Hardware MIDI</label>
+        <div style="display:flex; gap:6px;">
+          <input type="text" id="midi-code-input" placeholder="Premi 'MIDI Learn' o un pad">
+          <button id="single-learn-btn" class="btn btn-learn btn-small" onclick="toggleSingleLearn()">MIDI Learn</button>
+        </div>
       </div>
 
-      <button class="btn" id="save-map-btn">Salva</button>
-      <button class="btn btn-secondary" onclick="document.getElementById('log').innerHTML=''">Pulisci Log</button>
+      <div class="form-group">
+        <label>Tipo di Azione</label>
+        <select id="action-type" onchange="updateFormFields()">
+          <option value="hotkey">Combinazione Tasti (Key Learn)</option>
+          <option value="text">Incolla Testo</option>
+          <option value="media">Controllo Audio</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="field-hotkey">
+        <label>Scorciatoia Tastiera</label>
+        <div class="key-learn-box">
+          <input type="text" id="target-hotkey" placeholder="es. Control + C">
+          <button id="key-learn-btn" class="btn btn-learn btn-small" onclick="toggleKeyLearn()">Key Learn</button>
+        </div>
+      </div>
+
+      <div class="form-group" id="field-text" style="display:none;">
+        <label>Testo da Inviare</label>
+        <textarea id="target-text" rows="3" placeholder="Scrivi il testo..."></textarea>
+      </div>
+
+      <div class="form-group" id="field-media" style="display:none;">
+        <label>Azione Multimediale</label>
+        <select id="target-media">
+          <option value="play_pause">Play / Pausa</option>
+          <option value="volume_up">Volume +</option>
+          <option value="volume_down">Volume -</option>
+          <option value="mute">Mute Audio</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" onclick="saveCurrentSlot()">Salva Pad</button>
+        <button class="btn btn-danger" onclick="clearCurrentSlot()">Resetta</button>
+      </div>
     </div>
   </div>
 
   <script>
-    const padsContainer = document.getElementById('pads-container');
-    for (let i = 0; i < 8; i++) {
-      const btn = document.createElement('button');
-      btn.className = 'pad-btn';
-      btn.id = `pad-index-${i}`;
-      btn.innerHTML = `<strong>Pad ${i + 1}</strong><span id="note-label-${i}">-</span>`;
-      padsContainer.appendChild(btn);
+    const BANKS = ['PAD_A', 'PAD_B', 'CLIP_A', 'CLIP_B'];
+    let currentBank = 'PAD_A';
+    let selectedSlotIndex = 0;
+    let autoAssignMode = false;
+    let singleLearnMode = false;
+    let keyLearnActive = false;
+    let heldKeys = new Set();
+
+    let appData = JSON.parse(localStorage.getItem('icreativ_master_db') || '{}');
+    if (!appData.presets) {
+      appData = {
+        activePreset: 'Predefinito',
+        presets: { 'Predefinito': initBlankPreset() }
+      };
     }
 
+    function initBlankPreset() {
+      const p = {};
+      BANKS.forEach(b => {
+        p[b] = Array.from({ length: 8 }, () => ({ midiCode: '', type: 'hotkey', action: '' }));
+      });
+      return p;
+    }
+
+    function getActivePresetData() {
+      return appData.presets[appData.activePreset];
+    }
+
+    function populatePresetSelector() {
+      const sel = document.getElementById('preset-selector');
+      sel.innerHTML = '';
+      Object.keys(appData.presets).forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        if (name === appData.activePreset) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+
+    function createNewPreset() {
+      const name = prompt("Nome del nuovo preset:");
+      if (!name || appData.presets[name]) return;
+      appData.presets[name] = initBlankPreset();
+      appData.activePreset = name;
+      saveDatabase();
+      populatePresetSelector();
+      renderPads();
+      renderMappingsTable();
+    }
+
+    function deleteCurrentPreset() {
+      const names = Object.keys(appData.presets);
+      if (names.length <= 1) return alert("Devi mantenere almeno un preset.");
+      if (confirm(`Eliminare il preset "${appData.activePreset}"?`)) {
+        delete appData.presets[appData.activePreset];
+        appData.activePreset = Object.keys(appData.presets)[0];
+        saveDatabase();
+        populatePresetSelector();
+        renderPads();
+        renderMappingsTable();
+      }
+    }
+
+    function loadSelectedPreset() {
+      appData.activePreset = document.getElementById('preset-selector').value;
+      saveDatabase();
+      renderPads();
+      renderMappingsTable();
+    }
+
+    function saveDatabase() {
+      localStorage.setItem('icreativ_master_db', JSON.stringify(appData));
+    }
+
+    function toggleKeyLearn() {
+      keyLearnActive = !keyLearnActive;
+      heldKeys.clear();
+      const btn = document.getElementById('key-learn-btn');
+      btn.textContent = keyLearnActive ? 'Premi i tasti...' : 'Key Learn';
+      btn.classList.toggle('recording', keyLearnActive);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (!keyLearnActive) return;
+      e.preventDefault();
+      let keyName = e.key;
+      if (keyName === ' ') keyName = 'Space';
+      heldKeys.add(keyName);
+      document.getElementById('target-hotkey').value = Array.from(heldKeys).join(' + ');
+    });
+
+    window.addEventListener('keyup', () => {
+      if (!keyLearnActive) return;
+      toggleKeyLearn();
+    });
+
+    function renderPads() {
+      const container = document.getElementById('pads-container');
+      container.innerHTML = '';
+      const isClip = currentBank.startsWith('CLIP');
+      const preset = getActivePresetData();
+
+      preset[currentBank].forEach((slot, idx) => {
+        const div = document.createElement('div');
+        const isSelected = selectedSlotIndex === idx;
+        div.className = `pad-slot ${isClip ? 'is-clip' : ''} ${slot.action ? 'is-mapped' : ''} ${isSelected ? 'selected' : ''}`;
+        div.id = `slot-element-${currentBank}-${idx}`;
+        div.onclick = () => selectSlot(idx);
+
+        const padNumber = (currentBank.endsWith('_B') ? 8 : 0) + idx + 1;
+        div.innerHTML = `
+          <div class="pad-header"><span>${isClip ? 'CLIP' : 'PAD'} ${padNumber}</span></div>
+          <div class="pad-midi-code">${slot.midiCode || 'Non Assegnato'}</div>
+          <div class="pad-action-preview">${slot.action || '-'}</div>
+        `;
+        container.appendChild(div);
+      });
+
+      populateForm(preset[currentBank][selectedSlotIndex]);
+    }
+
+    function renderMappingsTable() {
+      const tbody = document.getElementById('mappings-table-body');
+      tbody.innerHTML = '';
+      const preset = getActivePresetData();
+
+      BANKS.forEach(bank => {
+        preset[bank].forEach((slot, idx) => {
+          if (slot.action) {
+            const padNum = (bank.endsWith('_B') ? 8 : 0) + idx + 1;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><strong>${bank} #${padNum}</strong></td>
+              <td><code>${slot.midiCode}</code></td>
+              <td>${slot.type}</td>
+              <td><strong>${slot.action}</strong></td>
+              <td class="actions-cell">
+                <button class="btn btn-small" onclick="editFromTable('${bank}', ${idx})">Modifica</button>
+                <button class="btn btn-danger btn-small" onclick="deleteFromTable('${bank}', ${idx})">X</button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          }
+        });
+      });
+    }
+
+    function editFromTable(bank, idx) {
+      switchBank(bank);
+      selectSlot(idx);
+    }
+
+    function deleteFromTable(bank, idx) {
+      getActivePresetData()[bank][idx] = { midiCode: getActivePresetData()[bank][idx].midiCode, type: 'hotkey', action: '' };
+      saveDatabase();
+      renderPads();
+      renderMappingsTable();
+    }
+
+    function switchBank(bankName) {
+      currentBank = bankName;
+      document.querySelectorAll('.bank-btn').forEach(btn => btn.classList.remove('active-pad', 'active-clip'));
+      document.getElementById(`btn-${bankName}`).classList.add(bankName.startsWith('CLIP') ? 'active-clip' : 'active-pad');
+      renderPads();
+    }
+
+    function selectSlot(idx) {
+      selectedSlotIndex = idx;
+      renderPads();
+    }
+
+    function toggleAutoAssign() {
+      autoAssignMode = !autoAssignMode;
+      singleLearnMode = false;
+      document.getElementById('single-learn-btn').classList.remove('recording');
+      const btn = document.getElementById('assign-btn');
+      btn.textContent = autoAssignMode ? 'Calibra Pad: IN ASCOLTO' : 'Calibra Pad: OFF';
+      btn.classList.toggle('recording', autoAssignMode);
+      renderPads();
+    }
+
+    function toggleSingleLearn() {
+      singleLearnMode = !singleLearnMode;
+      autoAssignMode = false;
+      document.getElementById('assign-btn').classList.remove('recording');
+      document.getElementById('assign-btn').textContent = 'Calibra Pad: OFF';
+      const btn = document.getElementById('single-learn-btn');
+      btn.classList.toggle('recording', singleLearnMode);
+      btn.textContent = singleLearnMode ? 'Premi il pad...' : 'MIDI Learn';
+    }
+
+    function updateFormFields() {
+      const type = document.getElementById('action-type').value;
+      ['hotkey', 'text', 'media'].forEach(f => {
+        document.getElementById(`field-${f}`).style.display = (f === type) ? 'block' : 'none';
+      });
+    }
+
+    function populateForm(slot) {
+      if (!slot) return;
+      const padNum = (currentBank.endsWith('_B') ? 8 : 0) + selectedSlotIndex + 1;
+      document.getElementById('slot-id-label').value = `${currentBank} -> Pad #${padNum}`;
+      document.getElementById('midi-code-input').value = slot.midiCode || '';
+      document.getElementById('action-type').value = slot.type || 'hotkey';
+
+      document.getElementById('target-hotkey').value = (slot.type === 'hotkey') ? slot.action : '';
+      document.getElementById('target-text').value = (slot.type === 'text') ? slot.action : '';
+      document.getElementById('target-media').value = (slot.type === 'media') ? slot.action : 'play_pause';
+      updateFormFields();
+    }
+
+    function saveCurrentSlot() {
+      const type = document.getElementById('action-type').value;
+      let val = '';
+      if (type === 'hotkey') val = document.getElementById('target-hotkey').value.trim();
+      else if (type === 'text') val = document.getElementById('target-text').value;
+      else if (type === 'media') val = document.getElementById('target-media').value;
+
+      getActivePresetData()[currentBank][selectedSlotIndex] = {
+        midiCode: document.getElementById('midi-code-input').value.trim(),
+        type: type,
+        action: val
+      };
+
+      saveDatabase();
+      renderPads();
+      renderMappingsTable();
+    }
+
+    function clearCurrentSlot() {
+      getActivePresetData()[currentBank][selectedSlotIndex].action = '';
+      saveDatabase();
+      renderPads();
+      renderMappingsTable();
+    }
+
+    // WEB MIDI MULTI-PORTA NATIVO
     function initMIDI() {
       if (!navigator.requestMIDIAccess) {
         document.getElementById('midi-status').textContent = 'Web MIDI non supportato';
@@ -100,16 +456,15 @@
           function setupInputs() {
             const inputs = Array.from(midiAccess.inputs.values());
             if (inputs.length > 0) {
-              const names = inputs.map(i => i.name).join(' + ');
+              const names = inputs.map(i => i.name).join(' | ');
               document.getElementById('midi-status').textContent = `Connesso: ${names}`;
               document.getElementById('midi-status').classList.add('online');
               
-              inputs.forEach((input) => {
-                log(`Ascolto attivo su porta: [${input.name}]`);
-                input.onmidimessage = (event) => handleIncoming(event, input.name);
+              inputs.forEach(input => {
+                input.onmidimessage = (event) => handleIncomingMIDI(event, input.name);
               });
             } else {
-              document.getElementById('midi-status').textContent = 'Nessun controller collegato';
+              document.getElementById('midi-status').textContent = 'Nessun controller';
               document.getElementById('midi-status').classList.remove('online');
             }
           }
@@ -118,48 +473,75 @@
           midiAccess.onstatechange = setupInputs;
         },
         () => {
-          document.getElementById('midi-status').textContent = 'Permesso negato';
+          document.getElementById('midi-status').textContent = 'Accesso Negato';
         }
       );
     }
 
-    function handleIncoming(event, portName) {
-      const data = Array.from(event.data);
-      const [status, data1, data2] = data;
+    function handleIncomingMIDI(event, portName) {
+      const [status, data1, data2] = event.data;
       const cmd = status >> 4;
-      const channel = (status & 0x0F) + 1;
+      let code = (cmd === 9) ? `note_${data1}` : (cmd === 11 ? `cc_${data1}` : null);
+      let isPress = data2 > 0 && cmd !== 8;
 
-      let msgDesc = `Porta: ${portName} | Byte: [${data.join(', ')}] | Ch: ${channel}`;
+      if (!code) return;
 
-      if (cmd === 9 && data2 > 0) {
-        msgDesc += ` -> NOTA ON: ${data1} (Vel: ${data2})`;
-        document.getElementById('selected-control').value = `Nota ${data1} (Ch ${channel})`;
-        triggerVisual(data1, true);
-      } else if (cmd === 8 || (cmd === 9 && data2 === 0)) {
-        msgDesc += ` -> NOTA OFF: ${data1}`;
-        triggerVisual(data1, false);
-      } else if (cmd === 11) {
-        msgDesc += ` -> CC: ${data1} (Val: ${data2})`;
-        document.getElementById('selected-control').value = `CC ${data1} (Val: ${data2})`;
+      document.getElementById('live-type').textContent = (cmd === 9 ? 'NOTE' : 'CC');
+      document.getElementById('live-id').textContent = code;
+      document.getElementById('live-val').textContent = data2;
+      document.getElementById('live-port').textContent = `Porta: ${portName}`;
+
+      const preset = getActivePresetData();
+
+      // MIDI Learn Singolo
+      if (singleLearnMode && isPress) {
+        preset[currentBank][selectedSlotIndex].midiCode = code;
+        document.getElementById('midi-code-input').value = code;
+        saveDatabase();
+        toggleSingleLearn();
+        renderPads();
+        renderMappingsTable();
+        return;
       }
 
-      log(msgDesc);
-    }
+      // Calibrazione Automatica Sequenziale Pad
+      if (autoAssignMode && isPress) {
+        preset[currentBank][selectedSlotIndex].midiCode = code;
+        document.getElementById('midi-code-input').value = code;
+        saveDatabase();
+        if (selectedSlotIndex < 7) {
+          selectedSlotIndex++;
+        } else {
+          toggleAutoAssign();
+        }
+        renderPads();
+        renderMappingsTable();
+        return;
+      }
 
-    function triggerVisual(note, active) {
-      // Evidenzia il primo pad libero o associato
-      const el = document.getElementById('pad-index-0');
-      if (el) {
-        if (active) el.classList.add('active');
-        else el.classList.remove('active');
+      // Risposta grafica al tocco
+      let targetBank = null, targetIdx = -1;
+      for (let b of BANKS) {
+        const found = preset[b].findIndex(s => s.midiCode === code);
+        if (found !== -1) { targetBank = b; targetIdx = found; break; }
+      }
+
+      if (targetBank !== null && targetIdx !== -1) {
+        if (isPress) {
+          if (currentBank !== targetBank) switchBank(targetBank);
+          selectSlot(targetIdx);
+        }
+        const el = document.getElementById(`slot-element-${targetBank}-${targetIdx}`);
+        if (el) {
+          if (isPress) el.classList.add('active');
+          else el.classList.remove('active');
+        }
       }
     }
 
-    function log(msg) {
-      const l = document.getElementById('log');
-      l.innerHTML = `> ${msg}<br>` + l.innerHTML;
-    }
-
+    populatePresetSelector();
+    renderPads();
+    renderMappingsTable();
     initMIDI();
   </script>
 </body>
