@@ -24,6 +24,7 @@
     .status-group { display: flex; gap: 8px; }
     .status { font-size: 0.78rem; padding: 4px 10px; border-radius: 14px; background: #161b22; color: var(--text-muted); border: 1px solid var(--border); font-weight: 600; }
     .status.online { border-color: var(--accent); color: var(--accent); background: rgba(0, 230, 118, 0.1); }
+    .status.bridge-on { border-color: #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
 
     .live-monitor {
       background: #080a0c; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
@@ -99,6 +100,7 @@
   <header>
     <h1>i-Creativ Master Pad Hub</h1>
     <div class="status-group">
+      <div id="bridge-status" class="status">PC Bridge: Non Attivo</div>
       <div id="midi-status" class="status">Inizializzazione MIDI...</div>
     </div>
   </header>
@@ -170,7 +172,8 @@
       <div class="form-group">
         <label>Tipo di Azione</label>
         <select id="action-type" onchange="updateFormFields()">
-          <option value="hotkey">Combinazione Tasti (Key Learn)</option>
+          <option value="hotkey">Combinazione Tasti (es. Ctrl+C)</option>
+          <option value="system">Gestione Finestre / Sistema (Alt+Tab, ecc.)</option>
           <option value="text">Incolla Testo</option>
           <option value="media">Controllo Audio</option>
         </select>
@@ -179,9 +182,19 @@
       <div class="form-group" id="field-hotkey">
         <label>Scorciatoia Tastiera</label>
         <div class="key-learn-box">
-          <input type="text" id="target-hotkey" placeholder="es. Control + C">
+          <input type="text" id="target-hotkey" placeholder="es. Control + c">
           <button id="key-learn-btn" class="btn btn-learn btn-small" onclick="toggleKeyLearn()">Key Learn</button>
         </div>
+      </div>
+
+      <div class="form-group" id="field-system" style="display:none;">
+        <label>Azione Finestre / Finestra Attiva</label>
+        <select id="target-system">
+          <option value="switch_app">Passa alla Prossima App (Alt + Tab)</option>
+          <option value="prev_app">Passa all'App Precedente (Alt + Shift + Tab)</option>
+          <option value="task_view">Visualizzazione Attività (Win + Tab)</option>
+          <option value="show_desktop">Mostra Desktop (Win + D)</option>
+        </select>
       </div>
 
       <div class="form-group" id="field-text" style="display:none;">
@@ -293,9 +306,10 @@
     window.addEventListener('keydown', (e) => {
       if (!keyLearnActive) return;
       e.preventDefault();
-      let keyName = e.key;
-      if (keyName === ' ') keyName = 'Space';
-      heldKeys.add(keyName);
+      let k = e.key;
+      if (k === 'Control') k = 'Ctrl';
+      if (k === ' ') k = 'Space';
+      heldKeys.add(k);
       document.getElementById('target-hotkey').value = Array.from(heldKeys).join(' + ');
     });
 
@@ -401,7 +415,7 @@
 
     function updateFormFields() {
       const type = document.getElementById('action-type').value;
-      ['hotkey', 'text', 'media'].forEach(f => {
+      ['hotkey', 'system', 'text', 'media'].forEach(f => {
         document.getElementById(`field-${f}`).style.display = (f === type) ? 'block' : 'none';
       });
     }
@@ -414,6 +428,7 @@
       document.getElementById('action-type').value = slot.type || 'hotkey';
 
       document.getElementById('target-hotkey').value = (slot.type === 'hotkey') ? slot.action : '';
+      document.getElementById('target-system').value = (slot.type === 'system') ? slot.action : 'switch_app';
       document.getElementById('target-text').value = (slot.type === 'text') ? slot.action : '';
       document.getElementById('target-media').value = (slot.type === 'media') ? slot.action : 'play_pause';
       updateFormFields();
@@ -423,6 +438,7 @@
       const type = document.getElementById('action-type').value;
       let val = '';
       if (type === 'hotkey') val = document.getElementById('target-hotkey').value.trim();
+      else if (type === 'system') val = document.getElementById('target-system').value;
       else if (type === 'text') val = document.getElementById('target-text').value;
       else if (type === 'media') val = document.getElementById('target-media').value;
 
@@ -442,6 +458,33 @@
       saveDatabase();
       renderPads();
       renderMappingsTable();
+    }
+
+    // SILENT BRIDGE DISPATCHER (Invio comandi a Windows senza errori a schermo)
+    let ws = null;
+    function connectBridge() {
+      try {
+        ws = new WebSocket('ws://127.0.0.1:8765');
+        ws.onopen = () => {
+          const b = document.getElementById('bridge-status');
+          b.textContent = 'PC Bridge: Connesso ✓';
+          b.classList.add('bridge-on');
+        };
+        ws.onclose = () => {
+          const b = document.getElementById('bridge-status');
+          b.textContent = 'PC Bridge: Non Attivo';
+          b.classList.remove('bridge-on');
+          setTimeout(connectBridge, 4000);
+        };
+        ws.onerror = () => { ws.close(); };
+      } catch (e) {}
+    }
+    connectBridge();
+
+    function sendToBridge(payload) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(payload));
+      }
     }
 
     // WEB MIDI MULTI-PORTA NATIVO
@@ -504,7 +547,7 @@
         return;
       }
 
-      // Calibrazione Automatica Sequenziale Pad
+      // Calibrazione Automatica Pad
       if (autoAssignMode && isPress) {
         preset[currentBank][selectedSlotIndex].midiCode = code;
         document.getElementById('midi-code-input').value = code;
@@ -519,7 +562,7 @@
         return;
       }
 
-      // Risposta grafica al tocco
+      // Ricerca ed esecuzione comando
       let targetBank = null, targetIdx = -1;
       for (let b of BANKS) {
         const found = preset[b].findIndex(s => s.midiCode === code);
@@ -530,6 +573,10 @@
         if (isPress) {
           if (currentBank !== targetBank) switchBank(targetBank);
           selectSlot(targetIdx);
+          const slot = preset[targetBank][targetIdx];
+          if (slot.action) {
+            sendToBridge(slot);
+          }
         }
         const el = document.getElementById(`slot-element-${targetBank}-${targetIdx}`);
         if (el) {
